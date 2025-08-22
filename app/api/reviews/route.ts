@@ -47,13 +47,18 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { userId, menuItemId, rating, comment } = body;
     const userEmail = request.headers.get("X-User-Email");
-
-    if (!userId && !userEmail) {
+    
+    if (!userEmail) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "Utilisateur non identifié",
-        },
+        { success: false, error: "Email utilisateur requis" },
+        { status: 400 }
+      );
+    }
+
+    const user = await prisma.user.findUnique({ where: { email: userEmail } });
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Utilisateur non trouvé" },
         { status: 400 }
       );
     }
@@ -71,7 +76,7 @@ export async function POST(request: NextRequest) {
     // Validation avec Zod
     try {
       reviewSchema.parse({
-        userId: userId ,
+        userId: user.id,
         menuItemId,
         rating,
         comment,
