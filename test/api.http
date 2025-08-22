@@ -1,0 +1,268 @@
+### Variables
+@baseUrl = http://localhost:3000
+@contentType = application/json
+
+### 1. GET - Obtenir la liste de tous les menu items
+GET {{baseUrl}}/api/menu-items
+
+### 2. GET - Obtenir un menu item existant
+GET {{baseUrl}}/api/menu-items/1
+
+### 3. POST - Connexion utilisateur (création automatique si inexistant)
+# @name loginUser1
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "testuser1@example.com"
+}
+
+### 4. POST - Connexion deuxième utilisateur
+# @name loginUser2
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "testuser2@google.ca"
+}
+
+### 5. GET - Récupérer profil du premier utilisateur
+GET {{baseUrl}}/api/users/profile
+X-User-Email: testuser1@example.com
+
+### 6. PUT - Mettre à jour le nom du premier utilisateur
+PUT {{baseUrl}}/api/users/profile
+Content-Type: {{contentType}}
+X-User-Email: testuser1@example.com
+
+{
+  "name": "Test User 1"
+}
+
+### 7. PUT - Mettre à jour le nom du deuxième utilisateur
+PUT {{baseUrl}}/api/users/profile
+Content-Type: {{contentType}}
+X-User-Email: testuser2@google.ca
+
+{
+  "name": "Test User 2"
+}
+
+### 8. GET - Obtenir tous les utilisateurs
+GET {{baseUrl}}/api/users
+
+### 9. POST - Ajouter un nouvel avis pour le premier utilisateur
+# @name createReviewUser1
+POST {{baseUrl}}/api/reviews
+Content-Type: {{contentType}}
+X-User-Email: testuser1@example.com
+
+{"menuItemId": 1, "rating": 5, "comment": "Délicieux!"}
+
+### 10. POST - Ajouter un nouvel avis pour le deuxième utilisateur
+# @name createReviewUser2
+POST {{baseUrl}}/api/reviews
+Content-Type: {{contentType}}
+X-User-Email: testuser2@google.ca
+
+{"menuItemId": 2, "rating": 4, "comment": "Trop salé"}
+
+### 11. GET - Obtenir tous les avis
+GET {{baseUrl}}/api/reviews
+
+### 12. GET - Obtenir un avis existant
+GET {{baseUrl}}/api/reviews/1
+
+### 13. GET - Obtenir tous les avis pour un menu spécifique
+GET {{baseUrl}}/api/reviews/by-menu/1
+
+### 14. GET - Obtenir tous les avis pour un utilisateur spécifique
+GET {{baseUrl}}/api/reviews/by-user
+X-User-Email: testuser2@google.ca
+
+### 15. PUT - Modifier un avis autorisé
+PUT {{baseUrl}}/api/reviews/{{createReviewUser1.response.body.data.id}}
+Content-Type: {{contentType}}
+X-User-Email: testuser1@example.com
+
+{"menuItemId": 1, "rating": 3, "comment": "Moyen"}
+
+### 16. GET - Vérifier que l'avis a été modifié
+GET {{baseUrl}}/api/reviews/{{createReviewUser1.response.body.data.id}}
+
+### 17. DELETE - Supprimer un avis autorisé
+DELETE {{baseUrl}}/api/reviews/{{createReviewUser1.response.body.data.id}}
+Content-Type: {{contentType}}
+X-User-Email: testuser1@example.com
+
+### 18. GET - Vérifier que l'avis a été supprimé
+GET {{baseUrl}}/api/reviews/{{createReviewUser1.response.body.data.id}}
+
+###
+### TESTS D'ERREURS
+###
+
+### Erreur 1 - GET un menu item inexistant
+GET {{baseUrl}}/api/menu-items/999999
+
+### Erreur 2 - POST connexion sans email
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": ""
+}
+
+### Erreur 3 - GET profil sans email
+GET {{baseUrl}}/api/users/profile
+
+### Erreur 4 - GET profil utilisateur inexistant
+GET {{baseUrl}}/api/users/profile?email=utilisateur.inexistant@example.com
+
+### Erreur 5 - PUT profil sans header X-User-Email
+PUT {{baseUrl}}/api/users/profile
+Content-Type: {{contentType}}
+
+{
+  "name": "Test sans header"
+}
+
+### Erreur 6 - PUT profil utilisateur inexistant
+PUT {{baseUrl}}/api/users/profile
+Content-Type: {{contentType}}
+X-User-Email: utilisateur.inexistant@example.com
+
+{
+  "name": "Test utilisateur inexistant"
+}
+
+### Erreur 7 - PUT profil avec nom trop long
+PUT {{baseUrl}}/api/users/profile
+Content-Type: {{contentType}}
+X-User-Email: testuser1@example.com
+
+{
+  "name": "Ce nom est beaucoup trop long et dépasse la limite de cinquante caractères autorisés"
+}
+
+### Erreur 8 - PUT profil avec un nom non-string
+PUT {{baseUrl}}/api/users/profile
+Content-Type: {{contentType}}
+X-User-Email: testuser1@example.com
+
+{
+  "name": 12345
+}
+
+### Erreur 9 - POST un avis sans email utilisateur
+POST {{baseUrl}}/api/reviews
+Content-Type: {{contentType}}
+
+{
+  "menuItemId": 1,
+  "rating": 5,
+  "comment": "Délicieux!"
+}
+
+### Erreur 10 - POST un avis avec un email utilisateur inexistant
+POST {{baseUrl}}/api/reviews
+Content-Type: {{contentType}}
+X-User-Email: utilisateur.inexistant@example.com
+
+{
+  "menuItemId": 1,
+  "rating": 5,
+  "comment": "Test avec utilisateur inexistant"
+}
+
+### Erreur 11 - POST un avis avec un rating invalide
+POST {{baseUrl}}/api/reviews
+Content-Type: {{contentType}}
+X-User-Email: testuser1@example.com
+
+{
+  "menuItemId": 1,
+  "rating": 6,
+  "comment": "Délicieux!"
+}
+
+### Erreur 12 - POST un avis avec un menuItemId invalide
+POST {{baseUrl}}/api/reviews
+Content-Type: {{contentType}}
+X-User-Email: testuser1@example.com
+
+{
+  "menuItemId": 999999,
+  "rating": 5,
+  "comment": "Délicieux!"
+}
+
+### Erreur 13 - POST un avis avec un commentaire vide
+POST {{baseUrl}}/api/reviews
+Content-Type: {{contentType}}
+X-User-Email: testuser1@example.com
+
+{
+  "menuItemId": 1,
+  "rating": 5,
+  "comment": ""
+}
+
+### Erreur 14 - POST avec données JSON malformées
+POST {{baseUrl}}/api/reviews
+Content-Type: {{contentType}}
+X-User-Email: testuser1@example.com
+
+{
+  "menuItemId": 1,
+  "rating": 5,
+  "comment": "Test malformé",
+}
+
+### Erreur 15 - PUT d'un avis non autorisé
+PUT {{baseUrl}}/api/reviews/{{createReviewUser2.response.body.data.id}}
+Content-Type: {{contentType}}
+X-User-Email: testuser1@example.com
+
+{"menuItemId": 2, "rating": 5, "comment": "Excellent!"}
+
+### Erreur 16 - PUT sans X-User-Email header
+PUT {{baseUrl}}/api/reviews/1
+Content-Type: {{contentType}}
+
+{
+  "menuItemId": 1,
+  "rating": 4,
+  "comment": "Test sans header email"
+}
+
+### Erreur 17 - PUT un avis inexistant
+PUT {{baseUrl}}/api/reviews/99999
+Content-Type: {{contentType}}
+X-User-Email: testuser1@example.com
+
+{
+  "menuItemId": 1,
+  "rating": 4,
+  "comment": "Tentative de modification d'un avis inexistant"
+}
+
+### Erreur 18 - DELETE d'un avis non autorisé
+DELETE {{baseUrl}}/api/reviews/{{createReviewUser2.response.body.data.id}}
+Content-Type: {{contentType}}
+X-User-Email: testuser1@example.com
+
+### Erreur 19 - DELETE sans X-User-Email header
+DELETE {{baseUrl}}/api/reviews/1
+Content-Type: {{contentType}}
+
+### Erreur 20 - DELETE un avis inexistant
+DELETE {{baseUrl}}/api/reviews/99999
+Content-Type: {{contentType}}
+X-User-Email: testuser1@example.com
+
+### Erreur 21 - GET un avis inexistant
+GET {{baseUrl}}/api/reviews/999999
+
+### Erreur 22 - GET avis d'utilisateur sans header
+GET {{baseUrl}}/api/reviews/by-user
