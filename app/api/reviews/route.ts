@@ -47,24 +47,24 @@ import { ZodError } from "zod";
  *                         example: "2023-01-01T00:00:00Z"
  *                       user:
  *                         type: object
- *                         properties:
- *                           id:
- *                             type: string
- *                             example: "clv1k2z8d0000u3l5g7x9h2wq"
- *                           email:
- *                             type: string
- *                             example: "user1@google.com"
- *                           name:
- *                             type: string
- *                             example: "Donald Trump"
- *                           createdAt:
- *                             type: string
- *                             format: date-time
- *                             example: "2023-01-01T00:00:00Z"
- *                           updatedAt:
- *                             type: string
- *                             format: date-time
- *                             example: "2023-01-01T00:00:00Z"
+ *                       properties:
+ *                         id:
+ *                           type: string
+ *                           example: "clv1k2z8d0000u3l5g7x9h2wq"
+ *                         email:
+ *                           type: string
+ *                           example: "user1@google.com"
+ *                         name:
+ *                           type: string
+ *                           example: "Donald Trump"
+ *                         createdAt:
+ *                           type: string
+ *                           format: date-time
+ *                           example: "2023-01-01T00:00:00Z"
+ *                         updatedAt:
+ *                           type: string
+ *                           format: date-time
+ *                           example: "2023-01-01T00:00:00Z"
  *                       menuItem:
  *                         type: object
  *                         properties:
@@ -150,6 +150,7 @@ export async function GET() {
           select: {
             id: true,
             name: true,
+            email: true,
           },
         },
         menuItem: {
@@ -333,6 +334,11 @@ export async function GET() {
  *                 value:
  *                   success: false
  *                   error: "Données manquantes"
+ *               deja_review:
+ *                 summary: Déjà commenté ce plat
+ *                 value:
+ *                   success: false
+ *                   error: "Vous avez déjà laissé un avis pour ce plat. Veuillez modifier votre avis existant."
  *               rating_invalide:
  *                 summary: Rating invalide
  *                 value:
@@ -388,6 +394,24 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: "Données manquantes",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Vérifier si l'utilisateur a déjà laissé un avis pour ce menu item
+    const existingReview = await prisma.review.findFirst({
+      where: {
+        userId: user.id,
+        menuItemId,
+      },
+    });
+    if (existingReview) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "Vous avez déjà laissé un avis pour ce plat. Veuillez modifier votre avis existant.",
         },
         { status: 400 }
       );
