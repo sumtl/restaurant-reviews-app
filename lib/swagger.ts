@@ -4,7 +4,8 @@ const options = {
   definition: {
     openapi: "3.0.0",
     info: {
-      title: "GroupLab1 API",
+      title: "Menu Items & Reviews API",
+      description: "API pour la gestion des plats et des avis",
       version: "1.0.0",
     },
     servers: [
