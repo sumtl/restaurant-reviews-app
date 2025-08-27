@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
-// Page de connexion (authentification par email)
-export default function LoginPage() {
+// Composant pour afficher un message de bannière selon le paramètre d'URL "message"
+function LoginContent() {
   const [formData, setFormData] = useState({
     email: "",
   });
@@ -118,5 +118,22 @@ export default function LoginPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+// Page de connexion (authentification par email)
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="max-w-md w-full text-center">
+            <div className="text-gray-600">Chargement...</div>
+          </div>
+        </div>
+      }
+    >
+      <LoginContent />
+    </Suspense>
   );
 }

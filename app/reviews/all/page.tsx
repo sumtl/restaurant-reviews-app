@@ -11,7 +11,7 @@ export default async function AllReviewsPage({
   const baseUrl =
     process.env.NEXT_PUBLIC_API ||
     (typeof window === "undefined" ? "http://localhost:3000" : "");
-  
+
   // Récupérer tous les avis depuis l'API
   const res = await fetch(`${baseUrl}/api/reviews`, { cache: "no-store" });
   const data = await res.json();

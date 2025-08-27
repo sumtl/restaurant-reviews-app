@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { reviewSchema } from "@/lib/rating";
 import { ZodError } from "zod";
 
+export const dynamic = "force-dynamic";
 // GET /api/reviews pour obtenir tous les avis
 /**
  * @swagger

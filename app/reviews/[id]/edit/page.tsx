@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
+import Image from "next/image";
 import { Review } from "@/types";
 
 // Page d'édition d'un avis utilisateur
@@ -27,44 +28,43 @@ export default function EditReviewPage() {
   });
 
   // Charger l'avis à éditer depuis l'API
-  async function load() {
-    // Vérifier l'utilisateur connecté
-    const userEmail = localStorage.getItem("userEmail");
-    if (userEmail) {
-      setCurrentUser({ id: userEmail, email: userEmail });
-    } else {
-      const userData = localStorage.getItem("user");
-      if (userData) {
-        setCurrentUser(JSON.parse(userData));
-      } else {
-        router.push("/login");
-        return;
-      }
-    }
-    // Charger l'avis
-    try {
-      const response = await fetch(`/api/reviews/${reviewId}`);
-      if (response.ok) {
-        const reviewData = await response.json();
-        const data = reviewData.data || reviewData;
-        setReview(data);
-        setFormData({
-          rating: data.rating,
-          comment: data.comment,
-        });
-      } else if (response.status === 404) {
-        setError("Avis non trouvé");
-      } else {
-        setError("Erreur lors du chargement de l'avis");
-      }
-    } catch {
-      setError("Erreur lors du chargement de l'avis");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   useEffect(() => {
+    async function load() {
+      // Vérifier l'utilisateur connecté
+      const userEmail = localStorage.getItem("userEmail");
+      if (userEmail) {
+        setCurrentUser({ id: userEmail, email: userEmail });
+      } else {
+        const userData = localStorage.getItem("user");
+        if (userData) {
+          setCurrentUser(JSON.parse(userData));
+        } else {
+          router.push("/login");
+          return;
+        }
+      }
+      // Charger l'avis
+      try {
+        const response = await fetch(`/api/reviews/${reviewId}`);
+        if (response.ok) {
+          const reviewData = await response.json();
+          const data = reviewData.data || reviewData;
+          setReview(data);
+          setFormData({
+            rating: data.rating,
+            comment: data.comment,
+          });
+        } else if (response.status === 404) {
+          setError("Avis non trouvé");
+        } else {
+          setError("Erreur lors du chargement de l'avis");
+        }
+      } catch {
+        setError("Erreur lors du chargement de l'avis");
+      } finally {
+        setLoading(false);
+      }
+    }
     load();
   }, [reviewId, router]);
 
@@ -190,13 +190,13 @@ export default function EditReviewPage() {
       {/* Menu Item Info */}
       <div className="bg-gray-50 p-4 rounded-lg mb-6">
         <div className="flex items-center gap-4">
-          {review.menuItem?.imageUrl && (
-            <img
-              src={review.menuItem.imageUrl}
+            <Image
+              src={review.menuItem.imageUrl || "/placeholder.png"}
               alt={review.menuItem?.name || "Plat"}
+              width={64}
+              height={64}
               className="w-16 h-16 object-cover rounded"
             />
-          )}
           <div>
             <h3 className="font-bold text-lg">
               {review.menuItem?.name || "(plat inconnu)"}

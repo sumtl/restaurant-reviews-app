@@ -1,5 +1,6 @@
 
 import Link from "next/link";
+import Image from "next/image";
 import { MenuItem } from "@/types";
 
 // Page de liste de tous les plats
@@ -28,13 +29,14 @@ export default async function MenuItemsPage() {
           >
             {/* Carte du plat */}
             <div className="bg-white rounded-xl shadow-md border p-4 flex flex-col h-full transition hover:shadow-lg">
-              {item.imageUrl && (
-                <img
-                  src={item.imageUrl}
+                <Image
+                  src={item.imageUrl ?? "/placeholder.png"}
                   alt={item.name}
+                  width={400}
+                  height={192}
                   className="w-full h-48 object-cover rounded-md mb-4"
+                  style={{ objectFit: "cover" }}
                 />
-              )}
               <h3 className="text-xl font-bold text-[#e31837] mb-2 group-hover:underline">
                 {item.name}
               </h3>

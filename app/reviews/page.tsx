@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect,Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Review, MenuItem } from "@/types";
 import ReviewForm from "@/components/ReviewForm";
 import ReviewList from "@/components/ReviewList";
 
 // Page de gestion des avis utilisateur (créer, modifier, supprimer)
-export default function ReviewsPage() {
+function ReviewsContent() {
   const searchParams = useSearchParams(); // Pour lire les paramètres d'URL
   const router = useRouter(); // Pour la navigation côté client
 
@@ -26,8 +26,7 @@ export default function ReviewsPage() {
     menuItemId: "",
     rating: 0,
     comment: "",
-  }); // Données du nouvel avis
-
+  });
   // Chargement initial de l'utilisateur et des données
   useEffect(() => {
     // Récupérer l'utilisateur depuis le localStorage
@@ -38,7 +37,7 @@ export default function ReviewsPage() {
     // Charger les avis et les plats
     fetchReviews();
     fetchMenuItems();
-  }, [searchParams]);
+  }, []);
 
   // Gérer l'ouverture du formulaire selon l'URL (édition ou création)
 
@@ -252,14 +251,14 @@ export default function ReviewsPage() {
             Choisir un autre plat
           </a>
         ) : (
-            !showCreateForm && (
-              <button
-                onClick={handleNewOrEditClick}
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 ml-auto"
-          >
-            Écrire un nouvel avis
-              </button>
-            )
+          !showCreateForm && (
+            <button
+              onClick={handleNewOrEditClick}
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 ml-auto"
+            >
+              Écrire un nouvel avis
+            </button>
+          )
         )}
       </div>
 
@@ -310,5 +309,12 @@ export default function ReviewsPage() {
         <a href="/" className="text-blue-500 hover:underline"></a>
       </div>
     </div>
+  );
+}
+export default function ReviewsPage() {
+  return (
+    <Suspense fallback={<div className="p-8">Chargement...</div>}>
+      <ReviewsContent />
+    </Suspense>
   );
 }
