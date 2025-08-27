@@ -36,7 +36,6 @@ export default function LoginPage() {
         localStorage.setItem("userEmail", formData.email);
         if (data.isNewUser) {
           router.push("/login/welcome");
-          window.location.reload();
         } else {
           window.location.assign("/");
         }

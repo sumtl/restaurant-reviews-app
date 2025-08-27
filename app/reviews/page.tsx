@@ -252,12 +252,14 @@ export default function ReviewsPage() {
             Choisir un autre plat
           </a>
         ) : (
-          <button
-            onClick={handleNewOrEditClick}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 ml-auto"
+            !showCreateForm && (
+              <button
+                onClick={handleNewOrEditClick}
+                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 ml-auto"
           >
             Écrire un nouvel avis
-          </button>
+              </button>
+            )
         )}
       </div>
 

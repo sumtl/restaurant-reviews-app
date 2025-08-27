@@ -2,7 +2,6 @@ import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
 // POST /api/auth/login pour connecter un utilisateur (ou le créer s'il n'existe pas)
-// POST /api/auth/login pour connecter un utilisateur (ou le créer s'il n'existe pas)
 /**
  * @swagger
  * /api/auth/login:

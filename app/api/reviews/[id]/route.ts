@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { reviewSchema } from "@/lib/rating";
@@ -134,7 +133,7 @@ export async function GET(
     const reviewID = Number(id);
 
     // Chercher l'avis par ID
-    const review = await prisma.review.findUnique({
+    const existingReview = await prisma.review.findUnique({
       where: { id: reviewID },
       include: {
         user: {
@@ -153,7 +152,7 @@ export async function GET(
       },
     });
 
-    if (!review) {
+    if (!existingReview) {
       return NextResponse.json(
         {
           success: false,
@@ -166,7 +165,7 @@ export async function GET(
     return NextResponse.json(
       {
         success: true,
-        data: review,
+        data: existingReview,
         message: "Avis récupéré avec succès",
       },
       { status: 200 }

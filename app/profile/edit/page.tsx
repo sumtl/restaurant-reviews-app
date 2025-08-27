@@ -77,65 +77,46 @@ export default function EditProfilePage() {
 
   // Rendu principal : formulaire de modification du profil
   return (
-    <div style={{ padding: "20px", maxWidth: "500px", margin: "0 auto" }}>
-      <div style={{ marginBottom: "20px" }}>
-        <Link href="/profile" style={{ color: "#666", textDecoration: "none" }}>
-          ← Retour au profil
-        </Link>
-      </div>
-
-      <h1>Modifier mon profil</h1>
-
+    <div className="max-w-xl mx-auto p-8 bg-white rounded-lg shadow-md mt-10">
+      <h1 className="text-3xl font-bold mb-6">Modifier mon profil</h1>
       {/* Formulaire de modification du nom d'affichage */}
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: "15px" }}>
-          <label htmlFor="name">Nom d'affichage:</label>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div>
+          <label htmlFor="name" className="block text-sm font-medium mb-2">
+            Nom d'affichage :
+          </label>
           <input
             type="text"
             id="name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             maxLength={50}
-            style={{
-              width: "100%",
-              padding: "8px",
-              marginTop: "5px",
-              border: "1px solid #ccc",
-              borderRadius: "4px",
-            }}
+            className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
             placeholder="Votre nom d'affichage"
           />
-          <small style={{ color: "#666" }}>
+          <small className="text-gray-600">
             Laissez vide pour rester anonyme
           </small>
         </div>
-
         <button
           type="submit"
           disabled={loading}
+          className="w-full py-2 rounded font-semibold text-white"
           style={{
-            width: "100%",
-            padding: "10px",
             backgroundColor: loading ? "#ccc" : "#e31837",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
             cursor: loading ? "not-allowed" : "pointer",
           }}
         >
           {loading ? "Mise à jour..." : "Mettre à jour"}
         </button>
       </form>
-
       {message && (
         <p
-          style={{
-            marginTop: "15px",
-            padding: "10px",
-            backgroundColor: message.includes("Erreur") ? "#ffebee" : "#e8f5e8",
-            color: message.includes("Erreur") ? "#c62828" : "#2e7d32",
-            borderRadius: "4px",
-          }}
+          className={`mt-6 p-3 rounded text-center font-medium ${
+            message.includes("Erreur")
+              ? "bg-red-100 text-red-700"
+              : "bg-green-100 text-green-700"
+          }`}
         >
           {message}
         </p>

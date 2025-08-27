@@ -84,7 +84,7 @@ export async function GET(
 
     const menuItem = await prisma.menuItem.findUnique({
       where: {
-        id: parseInt(id),
+        id: Number(id),
       },
     });
 
