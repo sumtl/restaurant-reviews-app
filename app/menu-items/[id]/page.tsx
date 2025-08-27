@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { MenuItem, Review } from "@/types";
 
 // Page de détails du plat par ID
@@ -13,29 +14,28 @@ export default function MenuItemPage({ params }: { params: { id: string } }) {
   const [loading, setLoading] = useState(true);
 
   // Fonction asynchrone unifiée pour charger les infos du plat et ses avis
-  async function load() {
-    // Vérifier l'état de connexion
-    const email = localStorage.getItem("userEmail");
-    setUserEmail(email);
-    try {
-      const menuResponse = await fetch(`/api/menu-items/${params.id}`);
-      const menuData = await menuResponse.json();
-      if (menuData.success) {
-        setMenuItem(menuData.data);
-      }
-      const reviewsResponse = await fetch(`/api/reviews/by-menu/${params.id}`);
-      const reviewsData = await reviewsResponse.json();
-      if (reviewsData.success) {
-        setReviews(reviewsData.data);
-      }
-    } catch (error) {
-      console.error("Erreur lors du chargement:", error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   useEffect(() => {
+    async function load() {
+      // Vérifier l'état de connexion
+      const email = localStorage.getItem("userEmail");
+      setUserEmail(email);
+      try {
+        const menuResponse = await fetch(`/api/menu-items/${params.id}`);
+        const menuData = await menuResponse.json();
+        if (menuData.success) {
+          setMenuItem(menuData.data);
+        }
+        const reviewsResponse = await fetch(`/api/reviews/by-menu/${params.id}`);
+        const reviewsData = await reviewsResponse.json();
+        if (reviewsData.success) {
+          setReviews(reviewsData.data);
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
     load();
   }, [params.id]);
 
@@ -126,9 +126,11 @@ export default function MenuItemPage({ params }: { params: { id: string } }) {
           }}
         >
           {menuItem.imageUrl && (
-            <img
+            <Image
               src={menuItem.imageUrl}
               alt={menuItem.name}
+              width={180}
+              height={140}
               style={{
                 width: "100%",
                 maxWidth: "180px",

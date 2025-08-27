@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 // Page de modification du profil utilisateur
@@ -13,31 +12,31 @@ export default function EditProfilePage() {
   const router = useRouter();
 
   // Fonction asynchrone unifiée pour charger le nom d'affichage depuis l'API
-  async function load() {
-    const email = localStorage.getItem("userEmail");
-    if (!email) {
-      router.push("/login");
-      return;
-    }
-    try {
-      const response = await fetch("/api/users/profile", {
-        headers: {
-          "X-User-Email": email,
-        },
-      });
-      const data = await response.json();
-      if (data.success && data.data.name) {
-        setName(data.data.name);
-      }
-    } catch (error) {
-      console.error("Erreur lors du chargement:", error);
-    }
-  }
 
   // Chargement initial du nom d'affichage lors du montage du composant
   useEffect(() => {
+    async function load() {
+      const email = localStorage.getItem("userEmail");
+      if (!email) {
+        router.push("/login");
+        return;
+      }
+      try {
+        const response = await fetch("/api/users/profile", {
+          headers: {
+            "X-User-Email": email,
+          },
+        });
+        const data = await response.json();
+        if (data.success && data.data.name) {
+          setName(data.data.name);
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement:", error);
+      }
+    }
     load();
-  }, []);
+  }, [router]);
 
   // Soumettre la modification du profil (PUT)
   const handleSubmit = async (e: React.FormEvent) => {
