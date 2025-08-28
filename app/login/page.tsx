@@ -11,7 +11,6 @@ function LoginContent() {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
   const searchParams = useSearchParams();
   const message = searchParams.get("message");
 
@@ -34,8 +33,8 @@ function LoginContent() {
 
       if (data.success) {
         localStorage.setItem("userEmail", formData.email);
-        if (data.isNewUser) {
-          router.push("/login/welcome");
+        if (data.data?.isNewUser) {
+          window.location.assign("/login/welcome");
         } else {
           window.location.assign("/");
         }

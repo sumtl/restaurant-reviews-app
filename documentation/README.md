@@ -2,6 +2,9 @@
 
 Une plateforme de notation et d’avis pour les plats d’un restaurant (exemple : Costco Food Court).
 
+## Déploiement en production :
+[https://menu-item-reviews.vercel.app](https://menu-item-reviews.vercel.app/)
+
 ## Description du projet
 
 Ce projet permet aux utilisateurs de :

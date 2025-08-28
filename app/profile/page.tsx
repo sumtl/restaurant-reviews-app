@@ -233,16 +233,6 @@ export default function ProfilePage() {
                   {new Date(review.createdAt).toLocaleDateString("fr-FR")}
                 </small>
                 <br />
-                <Link
-                  href={`/reviews/${review.id}`}
-                  style={{
-                    color: "#e31837",
-                    fontSize: "14px",
-                    textDecoration: "none",
-                  }}
-                >
-                  Modifier
-                </Link>
               </div>
             </div>
 

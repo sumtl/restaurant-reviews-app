@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import Image from "next/image";
 import { Review } from "@/types";
 
 // Page d'édition d'un avis utilisateur
@@ -169,7 +168,6 @@ export default function EditReviewPage() {
       </div>
     );
   }
-
   // Rendu principal : formulaire d'édition et infos de l'avis
   return (
     <div className="p-8 max-w-2xl mx-auto">
@@ -180,7 +178,6 @@ export default function EditReviewPage() {
           <strong>{review.menuItem?.name || "(plat inconnu)"}</strong>
         </p>
       </div>
-
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
           {error}
@@ -190,13 +187,6 @@ export default function EditReviewPage() {
       {/* Menu Item Info */}
       <div className="bg-gray-50 p-4 rounded-lg mb-6">
         <div className="flex items-center gap-4">
-            <Image
-              src={review.menuItem.imageUrl || "/placeholder.png"}
-              alt={review.menuItem?.name || "Plat"}
-              width={64}
-              height={64}
-              className="w-16 h-16 object-cover rounded"
-            />
           <div>
             <h3 className="font-bold text-lg">
               {review.menuItem?.name || "(plat inconnu)"}
@@ -209,7 +199,6 @@ export default function EditReviewPage() {
           </div>
         </div>
       </div>
-
       {/* Formulaire d'édition */}
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
@@ -286,7 +275,6 @@ export default function EditReviewPage() {
           </button>
         </div>
       </form>
-
       {/* Historique de l'avis */}
       <div className="mt-8 pt-6 border-t">
         <h3 className="font-medium text-gray-600 mb-2">Historique de l'avis</h3>
