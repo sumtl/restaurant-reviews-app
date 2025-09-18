@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Review } from "@/types";
+import { useUser } from "@clerk/nextjs";
 
 // Page d'édition d'un avis utilisateur
 export default function EditReviewPage() {
@@ -10,12 +11,11 @@ export default function EditReviewPage() {
   const params = useParams(); // Pour lire l'id de l'avis
   const reviewId = params.id as string;
 
+  // Récupérer l'utilisateur connecté
+  const { user, isSignedIn, isLoaded } = useUser();
+
   // États principaux
   const [review, setReview] = useState<Review | null>(null); // Avis à éditer
-  const [currentUser, setCurrentUser] = useState<{
-    id: string;
-    email: string;
-  } | null>(null); // Utilisateur courant
   const [loading, setLoading] = useState(true); // Chargement en cours
   const [saving, setSaving] = useState(false); // Enregistrement/suppression en cours
   const [error, setError] = useState(""); // Message d'erreur
@@ -28,26 +28,24 @@ export default function EditReviewPage() {
 
   // Charger l'avis à éditer depuis l'API
   useEffect(() => {
+    if (!isLoaded) return; // Attendre que l'état de l'utilisateur soit chargé
+    if (!isSignedIn) {    
+      setError("Vous devez être connecté pour modifier un avis.");
+      setLoading(false);
+      return;
+    }
     async function load() {
-      // Vérifier l'utilisateur connecté
-      const userEmail = localStorage.getItem("userEmail");
-      if (userEmail) {
-        setCurrentUser({ id: userEmail, email: userEmail });
-      } else {
-        const userData = localStorage.getItem("user");
-        if (userData) {
-          setCurrentUser(JSON.parse(userData));
-        } else {
-          router.push("/login");
-          return;
-        }
-      }
       // Charger l'avis
       try {
         const response = await fetch(`/api/reviews/${reviewId}`);
         if (response.ok) {
           const reviewData = await response.json();
           const data = reviewData.data || reviewData;
+          if (data.user?.id !== user?.id) {
+            setError("Vous n'êtes pas autorisé à modifier cet avis.");
+            setReview(null);
+            return;
+          }
           setReview(data);
           setFormData({
             rating: data.rating,
@@ -65,12 +63,12 @@ export default function EditReviewPage() {
       }
     }
     load();
-  }, [reviewId, router]);
+  }, [reviewId, router, user, isSignedIn ,isLoaded]);
 
   // Soumettre la modification de l'avis (PUT)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!review || !currentUser) return;
+    if (!review || !user || !isSignedIn) return;
 
     if (!formData.rating || !formData.comment.trim()) {
       setError("Tous les champs sont requis");
@@ -83,7 +81,6 @@ export default function EditReviewPage() {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "X-User-Email": currentUser.email,
         },
         body: JSON.stringify({
           ...formData,
@@ -105,7 +102,7 @@ export default function EditReviewPage() {
 
   // Supprimer l'avis (DELETE)
   const handleDelete = async () => {
-    if (!review || !currentUser) return;
+    if (!review || !user || !isSignedIn) return;
 
     if (
       !confirm(
@@ -121,9 +118,6 @@ export default function EditReviewPage() {
     try {
       const response = await fetch(`/api/reviews/${reviewId}`, {
         method: "DELETE",
-        headers: {
-          "X-User-Email": currentUser.email,
-        },
       });
 
       if (response.ok) {

@@ -4,21 +4,20 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { MenuItem, Review } from "@/types";
+import { useUser } from "@clerk/nextjs";
 
 // Page de détails du plat par ID
 export default function MenuItemPage({ params }: { params: { id: string } }) {
   // États pour stocker les infos du plat, les avis, l'email utilisateur, etc.
   const [menuItem, setMenuItem] = useState<MenuItem | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const { user, isSignedIn } = useUser();
 
   // Fonction asynchrone unifiée pour charger les infos du plat et ses avis
   useEffect(() => {
     async function load() {
       // Vérifier l'état de connexion
-      const email = localStorage.getItem("userEmail");
-      setUserEmail(email);
       try {
         const menuResponse = await fetch(`/api/menu-items/${params.id}`);
         const menuData = await menuResponse.json();
@@ -175,7 +174,7 @@ export default function MenuItemPage({ params }: { params: { id: string } }) {
               <strong>{reviews.length}</strong> avis
             </div>
           </div>
-          {userEmail && (
+          {isSignedIn && user && (
             <div style={{ marginTop: "10px" }}>
               <button
                 style={{
@@ -226,7 +225,7 @@ export default function MenuItemPage({ params }: { params: { id: string } }) {
           }}
         >
           <p>Aucun avis pour ce plat.</p>
-          {userEmail && <p>Soyez le premier à laisser un avis !</p>}
+          {user && isSignedIn && <p>Soyez le premier à laisser un avis !</p>}
         </div>
       ) : (
         reviews.map((review) => (
@@ -271,9 +270,9 @@ export default function MenuItemPage({ params }: { params: { id: string } }) {
                 Par: {review.user?.name || "Client anonyme"}
               </small>
 
-              {userEmail === review.user?.email && (
+              {user && isSignedIn && user.id === review.user?.id && (
                 <Link
-                  href={`/reviews/${review.id}`}
+                  href={`/reviews/${review.id}/edit`}
                   style={{
                     color: "#e31837",
                     fontSize: "14px",

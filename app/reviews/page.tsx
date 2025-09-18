@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect,Suspense } from "react";
+import { useState, useEffect,Suspense} from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Review, MenuItem } from "@/types";
 import ReviewForm from "@/components/ReviewForm";
 import ReviewList from "@/components/ReviewList";
+import { useUser } from "@clerk/nextjs";
 
 // Page de gestion des avis utilisateur (créer, modifier, supprimer)
 function ReviewsContent() {
@@ -12,13 +13,12 @@ function ReviewsContent() {
   const router = useRouter(); // Pour la navigation côté client
 
   const menuItemIdForBack = searchParams.get("menuItemId");
+
+  // Utilisation de useUser pour obtenir l'utilisateur actuellement connecté
+  const { user, isSignedIn} = useUser();
   // États principaux
   const [reviews, setReviews] = useState<Review[]>([]); // Liste des avis
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]); // Liste des plats
-  const [currentUser, setCurrentUser] = useState<{
-    id: string;
-    email: string;
-  } | null>(null); // Utilisateur courant
   const [loading, setLoading] = useState(true); // Chargement en cours
   const [error, setError] = useState(""); // Message d'erreur
   const [showCreateForm, setShowCreateForm] = useState(false); // Afficher le formulaire de création
@@ -27,37 +27,31 @@ function ReviewsContent() {
     rating: 0,
     comment: "",
   });
-  // Chargement initial de l'utilisateur et des données
-  useEffect(() => {
-    // Récupérer l'utilisateur depuis le localStorage
-    const userEmail = localStorage.getItem("userEmail");
-    if (userEmail) {
-      setCurrentUser({ id: userEmail, email: userEmail });
-    }
-    // Charger les avis et les plats
-    fetchReviews();
-    fetchMenuItems();
-  }, []);
-
   // Gérer l'ouverture du formulaire selon l'URL (édition ou création)
 
   // ID du plat déjà noté par l'utilisateur (si existe)
   const [alreadyReviewedMenuItemId, setAlreadyReviewedMenuItemId] = useState<
     string | null
-  >(null);
+    >(null);
   useEffect(() => {
+    fetchReviews();
+  }, []);
+  useEffect(() => {
+    fetchMenuItems();
     // Vérifier si l'utilisateur a déjà noté ce plat
+    if (!isSignedIn) {
+      setAlreadyReviewedMenuItemId(null);
+      return;
+    }   
     const menuItemIdFromUrl = searchParams.get("menuItemId");
-    if (!menuItemIdFromUrl || !currentUser) {
+    if (!menuItemIdFromUrl) {
       setAlreadyReviewedMenuItemId(null);
       return;
     }
-    const userEmail = currentUser.email.trim().toLowerCase();
     const userReview = reviews.find(
       (r) =>
         r.user &&
-        typeof r.user.email === "string" &&
-        r.user.email.trim().toLowerCase() === userEmail &&
+        r.user.id === user?.id &&
         r.menuItem.id === Number(menuItemIdFromUrl)
     );
     if (userReview) {
@@ -68,7 +62,7 @@ function ReviewsContent() {
       setNewReview((prev) => ({ ...prev, menuItemId: menuItemIdFromUrl }));
       setShowCreateForm(true);
     }
-  }, [reviews, currentUser, searchParams]);
+  }, [reviews, user, isSignedIn, searchParams]);
 
   // Charger tous les avis depuis l'API
   const fetchReviews = async () => {
@@ -116,19 +110,17 @@ function ReviewsContent() {
 
   // Filtrer les avis de l'utilisateur courant
   const getUserReviews = () => {
-    if (!currentUser || !Array.isArray(reviews)) return [];
-    const userEmail = currentUser.email.trim().toLowerCase();
+    if (!isSignedIn || !user || !Array.isArray(reviews)) return [];
     return reviews.filter(
       (review) =>
         review.user &&
-        typeof review.user.email === "string" &&
-        review.user.email.trim().toLowerCase() === userEmail
+        review.user.id === user.id
     );
   };
   // Créer un nouvel avis (POST)
   const handleCreateReview = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentUser) {
+    if (!isSignedIn || !user) {
       setError("Veuillez vous connecter d'abord");
       return;
     }
@@ -136,12 +128,10 @@ function ReviewsContent() {
       setError("⭐ Veuillez sélectionner une note en cliquant sur les étoiles");
       return;
     }
-    const userEmail = currentUser.email.trim().toLowerCase();
     const alreadyReviewed = reviews.some(
       (r) =>
         r.user &&
-        typeof r.user.email === "string" &&
-        r.user.email.trim().toLowerCase() === userEmail &&
+        r.user.id === user.id &&
         r.menuItem.id === Number(newReview.menuItemId)
     );
     if (alreadyReviewed) {
@@ -155,7 +145,6 @@ function ReviewsContent() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-User-Email": currentUser.email,
         },
         body: JSON.stringify({
           menuItemId: Number(newReview.menuItemId),
@@ -188,9 +177,6 @@ function ReviewsContent() {
     try {
       const response = await fetch(`/api/reviews/${reviewId}`, {
         method: "DELETE",
-        headers: {
-          "X-User-Email": currentUser?.email || "",
-        },
       });
       if (response.ok) {
         setReviews(reviews.filter((review) => review.id !== reviewId));
@@ -215,7 +201,7 @@ function ReviewsContent() {
   }
 
   // Affichage si non connecté
-  if (!currentUser) {
+  if (!isSignedIn || !user) {
     return (
       <div className="p-8">
         <h1 className="text-2xl font-bold mb-4">Mes Avis</h1>
