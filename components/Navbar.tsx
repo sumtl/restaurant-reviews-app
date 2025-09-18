@@ -1,29 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import {  usePathname } from "next/navigation";
+import {
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  SignUpButton,
+  UserButton,
+  useUser, 
+} from "@clerk/nextjs";
+import { Button } from "@/components/ui/button";
+
 
 // Barre de navigation principale
 export default function Navbar() {
-  // État pour stocker l'email de l'utilisateur connecté
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-  const router = useRouter();
+  // Récupération du chemin actuel
   const pathname = usePathname();
-
-  // Au montage, récupérer l'email depuis le localStorage si présent
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setUserEmail(localStorage.getItem("userEmail"));
-    }
-  }, []);
-
-  // Déconnexion : supprimer l'email, rediriger et recharger la page
-  const handleLogout = () => {
-    localStorage.removeItem("userEmail");
-    router.push("/");
-    window.location.reload();
-  };
+  const { user, isLoaded } = useUser();
 
   return (
     // Barre de navigation principale
@@ -31,83 +25,93 @@ export default function Navbar() {
       <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-4">
           {/* Lien Accueil */}
-          <Link
-            href="/"
-            className={`text-xl font-bold px-2 py-1 rounded transition-colors duration-150 ${
+          <Button
+            variant="ghost"
+            className={
               pathname === "/"
-                ? "text-orange-600 font-bold underline underline-offset-4"
-                : "text-orange-700 hover:underline hover:bg-gray-100"
-            }`}
+                ? "bg-orange-600 text-white font-bold hover:bg-orange-700"
+                : "bg-white text-gray-700 hover:bg-orange-600 hover:text-white"
+            }
+            asChild
           >
-            Accueil
-          </Link>
+            <Link href="/">Accueil</Link>
+          </Button>
           {/* Lien Tous les avis */}
-          <Link
-            href="/reviews/all"
-            className={`px-2 py-1 rounded transition-colors duration-150 ${
-              pathname.startsWith("/reviews/all")
-                ? "text-orange-600 font-bold underline underline-offset-4"
-                : "text-gray-700 hover:text-orange-600 hover:underline hover:bg-gray-100"
-            }`}
+          <Button
+            variant="ghost"
+            className={
+              pathname === "/reviews/all"
+                ? "bg-orange-600 text-white font-bold hover:bg-orange-700"
+                : "bg-white text-gray-700 hover:bg-orange-600 hover:text-white"
+            }
+            asChild
           >
-            Tous les avis
-          </Link>
+            <Link href="/reviews/all">Tous les avis</Link>
+          </Button>
           {/* Lien Mes avis (visible si connecté) */}
-          {userEmail && (
-            <Link
-              href="/reviews"
-              className={`px-2 py-1 rounded transition-colors duration-150 ${
+          <SignedIn>
+            <Button
+              variant="ghost"
+              className={
                 pathname.startsWith("/reviews") &&
                 !pathname.startsWith("/reviews/all")
-                  ? "text-orange-600 font-bold underline underline-offset-4"
-                  : "text-gray-700 hover:text-orange-600 hover:underline hover:bg-gray-100"
-              }`}
+                  ? "bg-orange-600 text-white font-bold hover:bg-orange-700"
+                  : "bg-white text-gray-700 hover:bg-orange-600 hover:text-white"
+              }
+              asChild
             >
-              Mes avis
-            </Link>
-          )}
+              <Link href="/reviews">Mes avis</Link>
+            </Button>
+          </SignedIn>
           {/* Lien Tous les plats */}
-          <Link
-            href="/menu-items"
-            className={`px-2 py-1 rounded transition-colors duration-150 ${
+          <Button
+            variant="ghost"
+            className={
               pathname.startsWith("/menu-items")
-                ? "text-orange-600 font-bold underline underline-offset-4"
-                : "text-gray-700 hover:text-orange-600 hover:underline hover:bg-gray-100"
-            }`}
+                ? "bg-orange-600 text-white font-bold hover:bg-orange-700"
+                : "bg-white text-gray-700 hover:bg-orange-600 hover:text-white"
+            }
+            asChild
           >
-            Tous les plats
-          </Link>
+            <Link href="/menu-items">Tous les plats</Link>
+          </Button>
         </div>
         {/* Actions utilisateur à droite */}
         <div className="flex items-center gap-3">
-          {userEmail ? (
-            // Si connecté : afficher email, profil et bouton déconnexion
-            <>
+          <SignedIn>
+            {isLoaded && (
               <span className="text-gray-700 text-sm hidden sm:inline">
-                {userEmail}
+                {user?.primaryEmailAddress?.emailAddress}
               </span>
-              <Link
-                href="/profile"
-                className="text-sm bg-gray-200 px-3 py-1 rounded hover:bg-gray-300"
-              >
+            )}
+            <Button
+              variant="outline"
+              className="hover:bg-orange-600 hover:text-white"
+            >
+              <Link href="/profile" className="text-sm">
                 Mon profil
               </Link>
-              <button
-                onClick={handleLogout}
-                className="text-sm bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-              >
-                Déconnexion
-              </button>
-            </>
-          ) : (
-            // Si non connecté : bouton Se connecter
-            <Link
-              href="/login"
-              className="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+            </Button>
+            <UserButton />
+          </SignedIn>
+          <SignedOut>
+            <Button
+              variant="outline"
+              className="hover:bg-orange-600 hover:text-white"
             >
-              Se connecter
-            </Link>
-          )}
+              <SignInButton mode="modal">
+                <span>Se connecter</span>
+              </SignInButton>
+            </Button>
+            <Button
+              variant="outline"
+              className="hover:bg-orange-600 hover:text-white"
+            >
+              <SignUpButton mode="modal">
+                <span>S'inscrire</span>
+              </SignUpButton>
+            </Button>
+          </SignedOut>
         </div>
       </div>
     </nav>
