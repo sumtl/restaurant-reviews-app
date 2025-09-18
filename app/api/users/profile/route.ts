@@ -1,26 +1,19 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 
 export const dynamic = "force-dynamic";
 // GET /api/users/profile pour obtenir le profil d'un utilisateur
-
 /**
  * @swagger
  * /api/users/profile:
  *   get:
  *     summary: Obtenir le profil d'un utilisateur
- *     description: Récupérer le profil d'un utilisateur par son email
+ *     description: Récupérer le profil de l'utilisateur actuellement authentifié via Clerk session.
  *     tags:
  *       - Utilisateurs
- *     parameters:
- *       - in: query
- *         name: email
- *         required: false
- *         description: Email de l'utilisateur pour récupérer son profil
- *         schema:
- *           type: string
- *           format: email
- *           example: "user@example.com"
+ *     security:
+ *       - clerkAuth: []
  *     responses:
  *       200:
  *         description: Profil utilisateur récupéré avec succès
@@ -68,8 +61,8 @@ export const dynamic = "force-dynamic";
  *                 updatedAt: "2023-01-01T00:00:00Z"
  *                 reviewsCount: 5
  *               message: "Profil utilisateur récupéré avec succès"
- *       400:
- *         description: Manque l'email dans les paramètres de requête ou le header X-User-Email
+ *       401:
+ *         description: Non authentifié (Clerk session requise)
  *         content:
  *           application/json:
  *             schema:
@@ -80,10 +73,10 @@ export const dynamic = "force-dynamic";
  *                   example: false
  *                 error:
  *                   type: string
- *                   example: "Email est obligatoire"
+ *                   example: "Non autorisé"
  *             example:
  *               success: false
- *               error: "Email est obligatoire"
+ *               error: "Non autorisé"
  *       404:
  *         description: Utilisateur non trouvé
  *         content:
@@ -117,26 +110,32 @@ export const dynamic = "force-dynamic";
  *               success: false
  *               error: "Erreur lors de la récupération du profil"
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(request.url);
-    const email = searchParams.get("email");
-    const userEmail = request.headers.get("X-User-Email");
-    const targetEmail = email || userEmail;
+    const { userId } = await auth();
 
-    if (!targetEmail) {
+    if (!userId) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "Email est obligatoire",
-        },
-        { status: 400 }
+        { success: false, error: "Non autorisé" },
+        { status: 401 }
       );
     }
 
+    const clerkUser = await currentUser();
+    const email = clerkUser?.emailAddresses?.[0]?.emailAddress;
+    const name = clerkUser?.firstName
+      ? `${clerkUser.firstName} ${clerkUser.lastName || ""}`.trim()
+      : null;
+
+    await prisma.user.upsert({
+      where: { id: userId },
+      update: { email, name },
+      create: { id: userId, email: email || "", name },
+    });
+
     // Chercher l'utilisateur dans la base de données par email
     const user = await prisma.user.findUnique({
-      where: { email: targetEmail },
+      where: { id: userId },
       select: {
         id: true,
         email: true,
@@ -157,7 +156,7 @@ export async function GET(request: NextRequest) {
           success: false,
           error: "Utilisateur non trouvé",
         },
-        { status: 404 }
+        { status: 400 }
       );
     }
 
@@ -194,17 +193,11 @@ export async function GET(request: NextRequest) {
  * /api/users/profile:
  *   put:
  *     summary: Mettre à jour le profil d'un utilisateur
- *     description: Mettre à jour le profil d'un utilisateur
+ *     description: Mettre à jour le profil de l'utilisateur actuellement authentifié via Clerk session.
  *     tags:
  *       - Utilisateurs
- *     parameters:
- *       - in: header
- *         name: X-User-Email
- *         required: true
- *         schema:
- *           type: string
- *           format: email
- *           example: "user@example.com"
+ *     security:
+ *       - clerkAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -278,8 +271,8 @@ export async function GET(request: NextRequest) {
  *                 value:
  *                   success: false
  *                   error: "Le nom ne peut pas dépasser 50 caractères"
- *       404:
- *         description: Header X-User-Email manquant
+ *       401:
+ *         description: Non authentifié (Clerk session requise)
  *         content:
  *           application/json:
  *             schema:
@@ -290,10 +283,10 @@ export async function GET(request: NextRequest) {
  *                   example: false
  *                 error:
  *                   type: string
- *                   example: "Utilisateur non trouvé"
+ *                   example: "Non autorisé"
  *             example:
  *               success: false
- *               error: "Utilisateur non trouvé"
+ *               error: "Non autorisé"
  *       500:
  *         description: Erreur lors de la mise à jour du profil
  *         content:
@@ -313,16 +306,14 @@ export async function GET(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
-    // Utiliser Email pour vérifier si l'utilisateur est connecté
-    const userEmail = request.headers.get("X-User-Email");
-
-    if (!userEmail) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json(
         {
           success: false,
-          error: "Le header X-User-Email est obligatoire",
+          error: "Utilisateur non trouvé",
         },
-        { status: 401 }
+        { status: 404 }
       );
     }
 
@@ -351,24 +342,9 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    // Vérifier que l'utilisateur existe
-    const existingUser = await prisma.user.findUnique({
-      where: { email: userEmail },
-    });
-
-    if (!existingUser) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Utilisateur non trouvé",
-        },
-        { status: 404 }
-      );
-    }
-
     // Mettre à jour le profil
     const updatedUser = await prisma.user.update({
-      where: { email: userEmail },
+      where: { id: userId },
       data: {
         name: name?.trim() || null,
       },

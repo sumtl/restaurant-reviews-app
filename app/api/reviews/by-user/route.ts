@@ -1,5 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@clerk/nextjs/server";
+
 export const dynamic = "force-dynamic";
 
 // GET /api/reviews/by-user pour obtenir les avis d'un utilisateur
@@ -7,19 +9,12 @@ export const dynamic = "force-dynamic";
  * @swagger
  * /api/reviews/by-user:
  *   get:
- *     summary: Obtenir les avis d'un utilisateur
- *     description: Récupérer la liste des avis pour un utilisateur spécifique (via le header X-User-Email)
+ *     summary: Obtenir les avis de l'utilisateur connecté
+ *     description: Récupérer la liste des avis pour l'utilisateur actuellement authentifié (session Clerk)
  *     tags:
  *       - Reviews
- *     parameters:
- *       - in: header
- *         name: X-User-Email
- *         required: true
- *         description: Email de l'utilisateur pour filtrer les avis
- *         schema:
- *           type: string
- *           format: email
- *           example: "user1@google.com"
+ *     security:
+ *       - clerkAuth: []
  *     responses:
  *       200:
  *         description: Liste des avis récupérée avec succès
@@ -101,7 +96,7 @@ export const dynamic = "force-dynamic";
  *                     name: "Burger"
  *               message: "2 avis trouvés pour cet utilisateur"
  *       401:
- *         description: Header X-User-Email manquant
+ *         description: Non authentifié (session Clerk requise)
  *         content:
  *           application/json:
  *             schema:
@@ -112,10 +107,10 @@ export const dynamic = "force-dynamic";
  *                   example: false
  *                 error:
  *                   type: string
- *                   example: "Email utilisateur requis"
+ *                   example: "Non autorisé"
  *             example:
  *               success: false
- *               error: "Email utilisateur requis"
+ *               error: "Non autorisé"
  *       500:
  *         description: Erreur lors de la récupération des avis
  *         content:
@@ -133,20 +128,18 @@ export const dynamic = "force-dynamic";
  *               success: false
  *               error: "Erreur lors de la récupération des avis"
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const userEmail = request.headers.get("X-User-Email");
-    if (!userEmail) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json(
-        { success: false, error: "Email utilisateur requis" },
+        { success: false, error: "Non autorisé" },
         { status: 401 }
       );
     }
     const reviews = await prisma.review.findMany({
       where: {
-        user: {
-          email: userEmail,
-        },
+        userId,
       },
       include: {
         user: {

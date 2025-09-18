@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { reviewSchema } from "@/lib/rating";
 import { ZodError } from "zod";
+import { auth } from "@clerk/nextjs/server";
 
 export const dynamic = "force-dynamic";
 // GET /api/reviews pour obtenir tous les avis
@@ -192,15 +193,8 @@ export async function GET() {
  *     description: Ajouter un nouvel avis pour un menu item
  *     tags:
  *       - Reviews
- *     parameters:
- *       - in: header
- *         name: X-User-Email
- *         required: true
- *         description: Email de l'utilisateur (doit être l'auteur de l'avis)
- *         schema:
- *           type: string
- *           format: email
- *           example: "user1@google.com"
+ *     security:
+ *       - clerkAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -348,6 +342,22 @@ export async function GET() {
  *                   details:
  *                     - path: "rating"
  *                       message: "Rating doit être entre 1 et 5"
+ *       401:
+ *         description: Utilisateur non authentifié
+ *         content:
+ *           application/json:  
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 error:
+ *                   type: string
+ *                   example: "Utilisateur non authentifié"
+ *             example:
+ *               success: false
+ *               error: "Utilisateur non authentifié" 
  *       500:
  *         description: Erreur lors de la création de l'avis
  *         content:
@@ -368,19 +378,16 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     // Vérification des données
-    const body = await request.json();
-    const { userId, menuItemId, rating, comment } = body;
-    const userEmail = request.headers.get("X-User-Email");
 
-    if (!userEmail) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json(
-        { success: false, error: "Email utilisateur requis" },
-        { status: 400 }
+        { success: false, error: "Utilisateur non authentifié" },
+        { status: 401 }
       );
     }
-
     const user = await prisma.user.findUnique({
-      where: { email: userEmail },
+      where: { id: userId },
       select: { id: true, email: true, name: true },
     });
     if (!user) {
@@ -389,6 +396,8 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+    const body = await request.json();
+    const { menuItemId, rating, comment } = body;
 
     if (!menuItemId || !rating || !comment) {
       return NextResponse.json(
@@ -441,9 +450,7 @@ export async function POST(request: NextRequest) {
     }
 
     // créer un nouvel avis
-    const userConnect = userId
-      ? { connect: { id: userId } }
-      : { connect: { email: userEmail as string } };
+    const userConnect = { connect: { id: userId } };
 
     const newReview = await prisma.review.create({
       data: {

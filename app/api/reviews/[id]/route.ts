@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { reviewSchema } from "@/lib/rating";
 import { ZodError } from "zod";
+import { auth } from "@clerk/nextjs/server";
 
 // GET /api/reviews/[id] pour obtenir un avis par son ID
 /**
@@ -191,6 +192,8 @@ export async function GET(
  *     description: Supprimer un avis spécifique (l'utilisateur doit être l'auteur)
  *     tags:
  *       - Reviews
+ *     security:
+ *       - clerkAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -199,14 +202,6 @@ export async function GET(
  *         schema:
  *           type: integer
  *           example: 1
- *       - in: header
- *         name: X-User-Email
- *         required: true
- *         description: Email de l'utilisateur (doit être l'auteur de l'avis)
- *         schema:
- *           type: string
- *           format: email
- *           example: "user1@google.com"
  *     responses:
  *       200:
  *         description: Avis supprimé avec succès
@@ -224,6 +219,22 @@ export async function GET(
  *             example:
  *               success: true
  *               message: "Avis supprimé avec succès"
+ *       401:
+ *         description: Non autorisé
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 error:
+ *                   type: string
+ *                   example: "Non autorisé"
+ *             example:
+ *               success: false
+ *               error: "Non autorisé"
  *       403:
  *         description: Non autorisé à supprimer cet avis
  *         content:
@@ -278,20 +289,19 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = params;
-    const reviewID = Number(id);
-    const userEmail = request.headers.get("X-User-Email");
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: "Non autorisé" },
+        { status: 401 }
+      );
+    }
+    const reviewID = Number(params.id);
 
     // Vérifier si l'avis existe
     const existingReview = await prisma.review.findUnique({
       where: { id: reviewID },
-      include: {
-        user: {
-          select: {
-            email: true,
-          },
-        },
-      },
+      select: { userId: true }
     });
 
     if (!existingReview) {
@@ -305,7 +315,7 @@ export async function DELETE(
     }
 
     // Vérifier si l'utilisateur est l'auteur de l'avis
-    if (existingReview.user.email !== userEmail) {
+    if (existingReview.userId !== userId) {
       return NextResponse.json(
         {
           success: false,
@@ -349,6 +359,8 @@ export async function DELETE(
  *     description: Modifier un avis spécifique (l'utilisateur doit être l'auteur)
  *     tags:
  *       - Reviews
+ *     security:
+ *       - clerkAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -357,14 +369,6 @@ export async function DELETE(
  *         schema:
  *           type: integer
  *           example: 1
- *       - in: header
- *         name: X-User-Email
- *         required: true
- *         description: Email de l'utilisateur (doit être l'auteur de l'avis)
- *         schema:
- *           type: string
- *           format: email
- *           example: "user1@google.com"
  *     requestBody:
  *       required: true
  *       content:
@@ -477,6 +481,22 @@ export async function DELETE(
  *                   details:
  *                     - path: "rating"
  *                       message: "Rating doit être entre 1 et 5"
+ *       401:
+ *         description: Non autorisé
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 error:
+ *                   type: string
+ *                   example: "Non autorisé"
+ *             example:
+ *               success: false
+ *               error: "Non autorisé"
  *       403:
  *         description: Non autorisé à modifier cet avis
  *         content:
@@ -531,9 +551,14 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = params;
-    const reviewID = Number(id);
-    const userEmail = request.headers.get("X-User-Email");
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: "Non autorisé" },
+        { status: 401 }
+      );
+    }
+    const reviewID = Number(params.id);
     const { rating, comment, menuItemId } = await request.json();
 
     // Vérification des données de base
@@ -572,13 +597,7 @@ export async function PUT(
     // Vérifier si l'avis existe
     const existingReview = await prisma.review.findUnique({
       where: { id: reviewID },
-      include: {
-        user: {
-          select: {
-            email: true,
-          },
-        },
-      },
+      select: { userId: true },
     });
 
     if (!existingReview) {
@@ -592,7 +611,7 @@ export async function PUT(
     }
 
     // Vérifier si l'utilisateur est l'auteur de l'avis
-    if (existingReview.user.email !== userEmail) {
+    if (existingReview.userId !== userId) {
       return NextResponse.json(
         {
           success: false,
