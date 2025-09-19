@@ -1,6 +1,44 @@
 # Analyse du code
 
-## Parties critiques (explication ligne par ligne)
+## Parties critiques (explication ### 2.1 Recherche utilisateur (auth### 2.3  - Utilisé dans : `GET /api/users/profile`, `PUT /api/users/profile`, `POST /api/reviews`, `POST /api/users`Récupération des avis (findMany- `/app/s- `/app/profile/page.tsx` : Affichage du profil utilisateur local (simple consultation).
+- `/app/profile/edit/page.tsx` : Modification des informations du profil local (nom seulement).n-in/[[.- **Gestion de l'authentification et**Sécurité et authentification**
+  - Authentification plus sécurisée : migration complète vers Clerk avec support multi-providers
+  - Gestion avancée des sessions et de la sécurité via Clerk
+  - Nom d'utilisateur unique (ou gestion simple des doublons)s droits** :
+  - Authentification via Clerk (email, Google, autres providers disponibles).
+  - Synchronisation automatique des utilisateurs Clerk avec la base de données locale via upsert.
+  - Chaque route API vérifie l'authentification via Clerk session (auth() et currentUser()).
+  - Seul l'auteur d'un avis peut le modifier ou le supprimer (vérification côté API).gn-in]]/page.tsx` : Authentification utilisateur Clerk (connexion).
+- `/app/sign-up/[[...sign-up]]/page.tsx` : Inscription utilisateur Clerk (création de compte).
+- `/app/user-profile/[[...user-profile]]/page.tsx` : Gestion complète du profil utilisateur via Clerk.vec upsert)
+
+- `await prisma.user.upsert({ ... })` : Synchronise automatiquement les utilisateurs Clerk avec la base de données locale.
+  - Utilisé dans : `GET /api/users/profile` pour créer ou mettre à jour l'utilisateur selon les données Clerk.
+
+- `await prisma.review.findMany({ ... })` :
+  - `GET /api/reviews` : Récupère tous les avis, joint les infos utilisateur et plat, trie par date.
+  - `GET /api/reviews/by-user` : Récupère tous les avis d'un utilisateur donné (filtre par userId via Clerk), joint les infos utilisateur et plat.
+  - `GET /api/reviews/by-menu/{menuItemId}` : Récupère tous les avis pour un plat donné (filtre par menuItemId), joint les infos utilisateur et plat.
+
+- `await prisma.user.findMany({ ... })` : Récupère la liste de tous les utilisateurs (utilisé dans `GET /api/users`).
+
+- `await prisma.menuItem.findMany({ ... })` : Récupère la liste de tous les plats (utilisé dans `GET /api/menu-items`).tUser)
+
+- `const { userId } = await auth();` : 
+  - Récupère l'ID utilisateur via Clerk session (auth utilisé pour vérifier l'authentification).
+  - Utilisé dans : `POST /api/reviews`, `GET /api/users/profile`, `PUT /api/users/profile`, `POST /api/users`
+
+- `const clerkUser = await currentUser();` :
+  - Récupère les informations complètes de l'utilisateur depuis Clerk.
+  - Utilisé dans : `GET /api/users/profile`, `PUT /api/users/profile`
+
+- `const existingReview = await prisma.review.findUnique({ where: { id: reviewID } });`:
+  - Vérifie l'existence d'un avis par son ID (findUnique utilisé ici car id est la clé primaire).
+  - Utilisé dans : `GET /api/reviews/{id}`, `PUT /api/reviews/{id}`, `DELETE /api/reviews/{id}`
+
+- `const menuItem = await prisma.menuItem.findUnique({ where: { id: menuItemId } });`
+  - Vérifie l'existence d'un plat par son ID (findUnique utilisé ici car id est la clé primaire).
+  - Utilisé dans : `GET /api/reviews/by-menu/[menuItemId]`, `GET /api/menu-items/{id}`, `POST /api/reviews`(vérification avant création d'un avis)ne)
 
 ### 1. Modèle de données (prisma/schema.prisma)
 
@@ -261,15 +299,16 @@ Le frontend est structuré autour de plusieurs pages Next.js, chacune ayant un r
 | Page / Composant                                                                                       | API appelée / Endpoint associé                                               | Description / Rôle principal                         |
 | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- | ---------------------------------------------------- |
 | `/app/page.tsx`                                                                                        | —                                                                            | Accueil de l’application.                            |
-| `/app/login/page.tsx`                                                                                  | `POST /api/auth/login`                                                       | Connexion utilisateur.                               |
-| `/app/login/welcome/page.tsx`                                                                          | —                                                                            | Message de bienvenue.                                |
+| `/app/sign-in/[[...sign-in]]/page.tsx`                                                                | Clerk Authentication                                                         | Connexion utilisateur via Clerk.                     |
+| `/app/sign-up/[[...sign-up]]/page.tsx`                                                                | Clerk Authentication                                                         | Inscription utilisateur via Clerk.                   |
+| `/app/user-profile/[[...user-profile]]/page.tsx`                                                      | Clerk Profile Management                                                     | Gestion complète du profil via Clerk.                |
 | `/app/reviews/page.tsx`                                                                                | `GET /api/reviews`, `POST /api/reviews`                                      | Gérer les avis utilisateur.                          |
 | `/app/reviews/all/page.tsx`                                                                            | `GET /api/reviews`                                                           | Voir tous les avis.                                  |
 | `/app/reviews/[id]/edit/page.tsx`                                                                      | `GET /api/reviews/{id}`, `PUT /api/reviews/{id}`, `DELETE /api/reviews/{id}` | Modifier ou supprimer un avis.                       |
 | `/app/menu-items/page.tsx`                                                                             | `GET /api/menu-items`                                                        | Voir la liste des plats.                             |
 | `/app/menu-items/[id]/page.tsx`                                                                        | `GET /api/menu-items/{id}`                                                   | Détail d’un plat.                                    |
-| `/app/profile/page.tsx`                                                                                | `GET /api/users/profile`                                                     | Voir le profil utilisateur.                          |
-| `/app/profile/edit/page.tsx`                                                                           | `GET /api/users/profile`, `PUT /api/users/profile`                           | Modifier le profil utilisateur.                      |
+| `/app/profile/page.tsx`                                                                                | `GET /api/users/profile`                                                     | Voir le profil utilisateur local.                    |
+| `/app/profile/edit/page.tsx`                                                                           | `GET /api/users/profile`, `PUT /api/users/profile`                           | Modifier le profil utilisateur local.                |
 | `/app/api-docs/page.tsx`                                                                               | `GET /api/swagger`                                                           | Documentation API Swagger.                           |
 | (API supplémentaires accessibles via fetch ou navigation interne, non directement mappées à page.tsx:) |                                                                              |                                                      |
 | `/app/menu-items/[id]/page.tsx`                                                                        | `GET /api/reviews/by-menu/{menuItemId}`                                      | Récupère les avis du plat affiché (fetch).           |
@@ -293,6 +332,9 @@ Le frontend est structuré autour de plusieurs pages Next.js, chacune ayant un r
   - Tailwind CSS pour un design rapide, responsive et cohérent.
   - Swagger pour la documentation et le test interactif de l’API.
   - Zod pour la validation stricte des schémas de données côté serveur.
+  - ShadCN/ui pour des composants UI modernes, accessibles et réutilisables.
+  - Clerk.dev pour l'authentification sécurisée et la gestion complète des utilisateurs.
+  - Vercel pour l'hébergement, le déploiement continu et l'optimisation des performances.
 
 - **Gestion de l’authentification et des droits** :
   - Authentification par email (création automatique de l’utilisateur à la première connexion).

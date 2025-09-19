@@ -6,17 +6,17 @@
 - `GET /api/reviews`  
   Récupérer la liste de tous les avis.
 - `POST /api/reviews`  
-  Créer un nouvel avis (header `X-User-Email` requis).
+  Créer un nouvel avis (authentification via Clerk session requise).
 - `GET /api/reviews/{id}`  
   Obtenir un avis par son ID.
 - `PUT /api/reviews/{id}`  
-  Modifier un avis (l'utilisateur doit être l'auteur, header `X-User-Email` requis).
+  Modifier un avis (l'utilisateur doit être l'auteur, authentification via Clerk session).
 - `DELETE /api/reviews/{id}`  
-  Supprimer un avis (l'utilisateur doit être l'auteur, header `X-User-Email` requis).
+  Supprimer un avis (l'utilisateur doit être l'auteur, authentification via Clerk session).
 - `GET /api/reviews/by-menu/{menuItemId}`  
   Obtenir les avis d'un menu item spécifique.
 - `GET /api/reviews/by-user`  
-  Obtenir les avis d'un utilisateur (header `X-User-Email` requis).
+  Obtenir les avis de l'utilisateur connecté (authentification via Clerk session requise).
 
 ### Menu Items
 - `GET /api/menu-items`  
@@ -26,15 +26,13 @@
 
 ### Utilisateurs
 - `GET /api/users`  
-  Récupérer la liste de tous les utilisateurs.
+  Récupérer la liste de tous les utilisateurs (authentification via Clerk session).
 - `GET /api/users/profile`  
-  Obtenir le profil d'un utilisateur (par email ou header `X-User-Email`).
+  Obtenir le profil de l'utilisateur actuellement connecté (authentification via Clerk session requise).
 - `PUT /api/users/profile`  
-  Mettre à jour le profil (header `X-User-Email` requis).
-
-### Authentification
-- `POST /api/auth/login`  
-  Connecter un utilisateur (ou le créer s'il n'existe pas).
+  Mettre à jour le profil de l'utilisateur actuellement connecté (authentification via Clerk session).
+- `POST /api/users`  
+  Créer un nouvel utilisateur (authentification via Clerk session).
 
 ### Documentation
 - `GET /api/swagger`  
@@ -55,16 +53,21 @@ Codes d’erreur courants et messages**
   - PUT /api/reviews/{id}
   - PUT /api/users/profile
   - GET /api/users
+  - POST /api/users (utilisateur existant)
 - **201 Created**
-  - POST /api/auth/login
+  - POST /api/users
   - POST /api/reviews 
 - **400 Bad Request**  
-  - POST /api/auth/login (Email manquant)
   - PUT /api/reviews/{id} (Données invalides ou manquantes)
-  - POST /api/reviews (Données invalides, email manquant, utilisateur non trouvé, avis déjà existant)
-  - GET /api/users/profile (Email est obligatoire)
+  - POST /api/reviews (Données invalides, utilisateur non trouvé, avis déjà existant)
+  - POST /api/users (Adresse email manquante)
+  - PUT /api/users/profile (Données invalides ou manquantes)
 - **401 Unauthorized**  
-  - GET /api/reviews/by-user (Header X-User-Email manquant)
+  - GET /api/reviews/by-user (Authentification requise via Clerk session)
+  - POST /api/reviews (Utilisateur non authentifié)
+  - POST /api/users (Utilisateur non authentifié)
+  - GET /api/users/profile (Non authentifié)
+  - PUT /api/users/profile (Non authentifié)
 - **403 Forbidden**  
   - DELETE /api/reviews/{id} (Non autorisé à supprimer cet avis )
   - PUT /api/reviews/{id} (Non autorisé à modifier cet avis)
@@ -84,7 +87,7 @@ Codes d’erreur courants et messages**
   - GET /api/users : Erreur lors de la récupération des utilisateurs  
   - GET /api/users/profile : Erreur lors de la récupération du profil  
   - PUT /api/users/profile : Erreur lors de la mise à jour du profil  
-  - POST /api/auth/login : Erreur lors de la connexion  
+  - POST /api/users : Erreur lors de la création de l'utilisateur  
   - GET /api/menu-items, GET /api/menu-items/{id} : Erreur serveur
 
 ---

@@ -1,0 +1,2032 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Menu Items & Reviews API",
+    "description": "API pour la gestion des plats et des avis",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://menu-item-reviews.vercel.app",
+      "description": "Serveur de production"
+    }
+  ],
+  "components": {
+    "schemas": {
+      "MenuItem": {
+        "type": "object",
+        "required": ["id", "name", "createdAt"],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Identifiant unique du plat",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "description": "Nom du plat",
+            "example": "Pizza Margherita"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description du plat",
+            "example": "Pizza classique avec sauce tomate et mozzarella",
+            "nullable": true
+          },
+          "imageUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL de l'image du plat",
+            "example": "https://exemple.com/pizza.jpg",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date de création",
+            "example": "2024-01-15T10:30:00.000Z"
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "required": ["id", "email", "createdAt", "updatedAt"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Identifiant unique de l'utilisateur",
+            "example": "clv1k2z8d0000u3l5g7x9h2wq"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Adresse email",
+            "example": "user@example.com"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nom de l'utilisateur",
+            "example": "Jean Dupont",
+            "maxLength": 50,
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date de création",
+            "example": "2024-01-15T10:30:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date de dernière modification",
+            "example": "2024-01-15T11:45:00.000Z"
+          }
+        }
+      },
+      "Review": {
+        "type": "object",
+        "required": [
+          "id",
+          "comment",
+          "rating",
+          "userId",
+          "menuItemId",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Identifiant unique de l'avis",
+            "example": 1
+          },
+          "comment": {
+            "type": "string",
+            "description": "Commentaire de l'utilisateur",
+            "example": "Délicieux !"
+          },
+          "rating": {
+            "type": "integer",
+            "description": "Note de l'utilisateur (1 à 5)",
+            "example": 5
+          },
+          "userId": {
+            "type": "string",
+            "description": "ID de l'utilisateur",
+            "example": "clv1k2z8d0000u3l5g7x9h2wq"
+          },
+          "menuItemId": {
+            "type": "integer",
+            "description": "ID du plat",
+            "example": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date de création",
+            "example": "2024-01-15T10:30:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date de dernière modification",
+            "example": "2024-01-15T11:45:00.000Z"
+          }
+        }
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "data": { "type": "object", "description": "Données de la réponse" },
+          "message": {
+            "type": "string",
+            "description": "Message descriptif",
+            "example": "Opération réussie"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": false },
+          "error": {
+            "type": "string",
+            "description": "Message d'erreur",
+            "example": "Une erreur est survenue"
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/api/menu-items/{id}": {
+      "get": {
+        "summary": "Obtenir un menu item par ID",
+        "description": "Récupérer un menu item spécifique en utilisant son ID",
+        "tags": ["Menu Items"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string", "example": "1" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Menu item récupéré avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": { "$ref": "#/components/schemas/MenuItem" },
+                    "message": {
+                      "type": "string",
+                      "example": "Menu item récupéré avec succès"
+                    }
+                  }
+                }
+              },
+              "example": {
+                "success": true,
+                "data": {
+                  "id": 1,
+                  "name": "Pizza",
+                  "description": "Delicious cheese pizza",
+                  "imageUrl": "https://example.com/pizza.jpg",
+                  "createdAt": "2023-01-01T00:00:00Z"
+                },
+                "message": "Menu item récupéré avec succès"
+              }
+            }
+          },
+          "404": {
+            "description": "Menu item non trouvé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": {
+                      "type": "string",
+                      "example": "Menu item non trouvé"
+                    }
+                  }
+                }
+              },
+              "example": { "success": false, "error": "Menu item non trouvé" }
+            }
+          },
+          "500": {
+            "description": "Erreur lors de la récupération du menu item",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": {
+                      "type": "string",
+                      "example": "Erreur lors de la récupération du menu item"
+                    }
+                  }
+                }
+              },
+              "example": {
+                "success": false,
+                "error": "Erreur lors de la récupération du menu item"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/menu-items": {
+      "get": {
+        "summary": "Obtenir tous les menu items",
+        "description": "Récupérer la liste de tous les menu items",
+        "tags": ["Menu Items"],
+        "responses": {
+          "200": {
+            "description": "Liste des menu items récupérée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/MenuItem" }
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Liste des menu items récupérée avec succès"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": [
+                    {
+                      "id": 1,
+                      "name": "Pizza",
+                      "description": "Delicious cheese pizza",
+                      "imageUrl": "https://example.com/pizza.jpg",
+                      "createdAt": "2023-01-01T00:00:00Z"
+                    },
+                    {
+                      "id": 2,
+                      "name": "Burger",
+                      "description": "Juicy beef burger",
+                      "imageUrl": "https://example.com/burger.jpg",
+                      "createdAt": "2023-01-02T00:00:00Z"
+                    }
+                  ],
+                  "message": "2 menu item(s) trouvé(s)"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur lors de la récupération des menu items",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": {
+                      "type": "string",
+                      "example": "Erreur lors de la récupération des menu items"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reviews/{id}": {
+      "get": {
+        "summary": "Obtenir un avis par ID",
+        "description": "Récupérer un avis spécifique en utilisant son ID",
+        "tags": ["Reviews"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "description": "ID de l'avis",
+            "schema": { "type": "integer", "example": 1 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Avis récupéré avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "integer", "example": 1 },
+                        "comment": {
+                          "type": "string",
+                          "example": "Très bon plat !"
+                        },
+                        "rating": { "type": "integer", "example": 5 },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2023-01-01T00:00:00Z"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2023-01-01T00:00:00Z"
+                        },
+                        "user": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "example": "clv1k2z8d0000u3l5g7x9h2wq"
+                            },
+                            "name": {
+                              "type": "string",
+                              "example": "Donald Trump"
+                            },
+                            "email": {
+                              "type": "string",
+                              "example": "user1@google.com"
+                            }
+                          }
+                        },
+                        "menuItem": {
+                          "type": "object",
+                          "properties": {
+                            "id": { "type": "integer", "example": 1 },
+                            "name": { "type": "string", "example": "Pizza" }
+                          }
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Avis récupéré avec succès"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "id": 1,
+                    "comment": "Très bon plat !",
+                    "rating": 5,
+                    "createdAt": "2023-01-01T00:00:00Z",
+                    "updatedAt": "2023-01-01T00:00:00Z",
+                    "user": {
+                      "id": "clv1k2z8d0000u3l5g7x9h2wq",
+                      "name": "Donald Trump",
+                      "email": "user1@google.com"
+                    },
+                    "menuItem": { "id": 1, "name": "Pizza" }
+                  },
+                  "message": "Avis récupéré avec succès"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Avis non trouvé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": { "type": "string", "example": "Avis non trouvé" }
+                  }
+                },
+                "example": { "success": false, "error": "Avis non trouvé" }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur lors de la récupération de l'avis",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": {
+                      "type": "string",
+                      "example": "Erreur lors de la récupération de l'avis"
+                    }
+                  }
+                },
+                "example": {
+                  "success": false,
+                  "error": "Erreur lors de la récupération de l'avis"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Supprimer un avis par ID",
+        "description": "Supprimer un avis spécifique (l'utilisateur doit être l'auteur)",
+        "tags": ["Reviews"],
+        "security": [{ "clerkAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "description": "ID de l'avis à supprimer",
+            "schema": { "type": "integer", "example": 1 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Avis supprimé avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": {
+                      "type": "string",
+                      "example": "Avis supprimé avec succès"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "message": "Avis supprimé avec succès"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non autorisé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": { "type": "string", "example": "Non autorisé" }
+                  }
+                },
+                "example": { "success": false, "error": "Non autorisé" }
+              }
+            }
+          },
+          "403": {
+            "description": "Non autorisé à supprimer cet avis",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": {
+                      "type": "string",
+                      "example": "Vous n'êtes pas autorisé à supprimer cet avis"
+                    }
+                  }
+                },
+                "example": {
+                  "success": false,
+                  "error": "Vous n'êtes pas autorisé à supprimer cet avis"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Avis non trouvé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": { "type": "string", "example": "Avis non trouvé" }
+                  }
+                },
+                "example": { "success": false, "error": "Avis non trouvé" }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur lors de la suppression de l'avis",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": {
+                      "type": "string",
+                      "example": "Erreur lors de la suppression de l'avis"
+                    }
+                  }
+                },
+                "example": {
+                  "success": false,
+                  "error": "Erreur lors de la suppression de l'avis"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Modifier un avis par ID",
+        "description": "Modifier un avis spécifique (l'utilisateur doit être l'auteur)",
+        "tags": ["Reviews"],
+        "security": [{ "clerkAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "description": "ID de l'avis à modifier",
+            "schema": { "type": "integer", "example": 1 }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["rating", "comment", "menuItemId"],
+                "properties": {
+                  "rating": {
+                    "type": "integer",
+                    "description": "Note de l'avis (entre 1 et 5)",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "example": 4
+                  },
+                  "comment": {
+                    "type": "string",
+                    "description": "Commentaire de l'avis",
+                    "minLength": 1,
+                    "maxLength": 500,
+                    "example": "Bon mais un peu salé"
+                  },
+                  "menuItemId": {
+                    "type": "integer",
+                    "description": "ID du menu item",
+                    "example": 2
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Avis modifié avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "integer", "example": 1 },
+                        "comment": {
+                          "type": "string",
+                          "example": "Bon mais un peu salé"
+                        },
+                        "rating": { "type": "integer", "example": 4 },
+                        "menuItemId": { "type": "integer", "example": 2 },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2023-01-01T00:00:00Z"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2023-01-03T00:00:00Z"
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Avis modifié avec succès"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "id": 1,
+                    "comment": "Bon mais un peu salé",
+                    "rating": 4,
+                    "menuItemId": 2,
+                    "createdAt": "2023-01-01T00:00:00Z",
+                    "updatedAt": "2023-01-03T00:00:00Z"
+                  },
+                  "message": "Avis modifié avec succès"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Données invalides ou manquantes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": {
+                      "type": "string",
+                      "example": "Tous les champs sont requis"
+                    },
+                    "details": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": { "type": "string", "example": "rating" },
+                          "message": {
+                            "type": "string",
+                            "example": "Rating doit être entre 1 et 5"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "examples": {
+                  "champs_manquants": {
+                    "summary": "Champs manquants",
+                    "value": {
+                      "success": false,
+                      "error": "Tous les champs sont requis"
+                    }
+                  },
+                  "rating_invalide": {
+                    "summary": "Rating invalide",
+                    "value": {
+                      "success": false,
+                      "error": "Données invalides - Rating doit être entre 1 et 5",
+                      "details": [
+                        {
+                          "path": "rating",
+                          "message": "Rating doit être entre 1 et 5"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non autorisé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": { "type": "string", "example": "Non autorisé" }
+                  }
+                },
+                "example": { "success": false, "error": "Non autorisé" }
+              }
+            }
+          },
+          "403": {
+            "description": "Non autorisé à modifier cet avis",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": {
+                      "type": "string",
+                      "example": "Vous n'êtes pas autorisé à modifier cet avis"
+                    }
+                  }
+                },
+                "example": {
+                  "success": false,
+                  "error": "Vous n'êtes pas autorisé à modifier cet avis"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Avis non trouvé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": { "type": "string", "example": "Avis non trouvé" }
+                  }
+                },
+                "example": { "success": false, "error": "Avis non trouvé" }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur lors de la modification de l'avis",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": {
+                      "type": "string",
+                      "example": "Erreur lors de la modification de l'avis"
+                    }
+                  }
+                },
+                "example": {
+                  "success": false,
+                  "error": "Erreur lors de la modification de l'avis"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reviews/by-menu/{menuItemId}": {
+      "get": {
+        "summary": "Obtenir les avis d'un menu item",
+        "description": "Récupérer la liste des avis pour un menu item spécifique",
+        "tags": ["Reviews"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "menuItemId",
+            "required": true,
+            "description": "L'ID du menu item",
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des avis récupérée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer", "example": 1 },
+                          "comment": {
+                            "type": "string",
+                            "example": "Très bon plat !"
+                          },
+                          "rating": { "type": "integer", "example": 5 },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "example": "2023-01-01T00:00:00Z"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "example": "2023-01-01T00:00:00Z"
+                          },
+                          "user": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "example": "clv1k2z8d0000u3l5g7x9h2wq"
+                              },
+                              "email": {
+                                "type": "string",
+                                "example": "user1@google.com"
+                              },
+                              "name": {
+                                "type": "string",
+                                "example": "Donald Trump"
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "format": "date-time",
+                                "example": "2023-01-01T00:00:00Z"
+                              },
+                              "updatedAt": {
+                                "type": "string",
+                                "format": "date-time",
+                                "example": "2023-01-01T00:00:00Z"
+                              }
+                            }
+                          },
+                          "menuItem": {
+                            "type": "object",
+                            "properties": {
+                              "id": { "type": "integer", "example": 1 },
+                              "name": { "type": "string", "example": "Pizza" },
+                              "description": {
+                                "type": "string",
+                                "example": "Delicious cheese pizza"
+                              },
+                              "imageUrl": {
+                                "type": "string",
+                                "example": "https://example.com/pizza.jpg"
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "format": "date-time",
+                                "example": "2023-01-01T00:00:00Z"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "message": { "type": "string", "example": "1 avis trouvé" }
+                  }
+                }
+              },
+              "example": {
+                "success": true,
+                "data": [
+                  {
+                    "id": 1,
+                    "comment": "Très bon plat !",
+                    "rating": 5,
+                    "createdAt": "2023-01-01T00:00:00Z",
+                    "updatedAt": "2023-01-01T00:00:00Z",
+                    "user": {
+                      "id": "clv1k2z8d0000u3l5g7x9h2wq",
+                      "email": "user1@google.com",
+                      "name": "Donald Trump",
+                      "createdAt": "2023-01-01T00:00:00Z",
+                      "updatedAt": "2023-01-01T00:00:00Z"
+                    },
+                    "menuItem": {
+                      "id": 1,
+                      "name": "Pizza",
+                      "description": "Delicious cheese pizza",
+                      "imageUrl": "https://example.com/pizza.jpg",
+                      "createdAt": "2023-01-01T00:00:00Z"
+                    }
+                  },
+                  {
+                    "id": 2,
+                    "comment": "Bon mais un peu salé",
+                    "rating": 4,
+                    "createdAt": "2023-01-02T00:00:00Z",
+                    "updatedAt": "2023-01-02T00:00:00Z",
+                    "user": {
+                      "id": "clv1k2z8d0009u3l5g7x9h2wr",
+                      "email": "user2@google.com",
+                      "name": "John Biden",
+                      "createdAt": "2023-01-02T00:00:00Z",
+                      "updatedAt": "2023-01-02T00:00:00Z"
+                    },
+                    "menuItem": {
+                      "id": 2,
+                      "name": "Burger",
+                      "description": "Juicy beef burger",
+                      "imageUrl": "https://example.com/burger.jpg",
+                      "createdAt": "2023-01-02T00:00:00Z"
+                    }
+                  }
+                ],
+                "message": "2 avis trouvés"
+              }
+            }
+          },
+          "404": {
+            "description": "Menu item non trouvé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": {
+                      "type": "string",
+                      "example": "Menu item non trouvé"
+                    }
+                  }
+                },
+                "example": { "success": false, "error": "Menu item non trouvé" }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur lors de la récupération des avis",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": {
+                      "type": "string",
+                      "example": "Erreur lors de la récupération des avis"
+                    }
+                  }
+                }
+              },
+              "example": {
+                "success": false,
+                "error": "Erreur lors de la récupération des avis"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reviews/by-user": {
+      "get": {
+        "summary": "Obtenir les avis de l'utilisateur connecté",
+        "description": "Récupérer la liste des avis pour l'utilisateur actuellement authentifié (session Clerk)",
+        "tags": ["Reviews"],
+        "security": [{ "clerkAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Liste des avis récupérée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer", "example": 1 },
+                          "comment": {
+                            "type": "string",
+                            "example": "Très bon plat !"
+                          },
+                          "rating": { "type": "integer", "example": 5 },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "example": "2023-01-01T00:00:00Z"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "example": "2023-01-01T00:00:00Z"
+                          },
+                          "user": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "example": "clv1k2z8d0000u3l5g7x9h2wq"
+                              },
+                              "name": {
+                                "type": "string",
+                                "example": "Donald Trump"
+                              }
+                            }
+                          },
+                          "menuItem": {
+                            "type": "object",
+                            "properties": {
+                              "id": { "type": "integer", "example": 1 },
+                              "name": { "type": "string", "example": "Pizza" }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "2 avis trouvés pour cet utilisateur"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": [
+                    {
+                      "id": 1,
+                      "comment": "Très bon plat !",
+                      "rating": 5,
+                      "createdAt": "2023-01-01T00:00:00Z",
+                      "updatedAt": "2023-01-01T00:00:00Z",
+                      "user": {
+                        "id": "clv1k2z8d0000u3l5g7x9h2wq",
+                        "name": "Donald Trump"
+                      },
+                      "menuItem": { "id": 1, "name": "Pizza" }
+                    },
+                    {
+                      "id": 2,
+                      "comment": "Bon mais un peu salé",
+                      "rating": 4,
+                      "createdAt": "2023-01-02T00:00:00Z",
+                      "updatedAt": "2023-01-02T00:00:00Z",
+                      "user": {
+                        "id": "clv1k2z8d0000u3l5g7x9h2wq",
+                        "name": "Donald Trump"
+                      },
+                      "menuItem": { "id": 2, "name": "Burger" }
+                    }
+                  ],
+                  "message": "2 avis trouvés pour cet utilisateur"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié (session Clerk requise)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": { "type": "string", "example": "Non autorisé" }
+                  }
+                },
+                "example": { "success": false, "error": "Non autorisé" }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur lors de la récupération des avis",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": {
+                      "type": "string",
+                      "example": "Erreur lors de la récupération des avis"
+                    }
+                  }
+                },
+                "example": {
+                  "success": false,
+                  "error": "Erreur lors de la récupération des avis"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reviews": {
+      "get": {
+        "summary": "Obtenir tous les avis",
+        "description": "Récupérer la liste de tous les avis",
+        "tags": ["Reviews"],
+        "responses": {
+          "200": {
+            "description": "Liste des avis récupérée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer", "example": 1 },
+                          "comment": {
+                            "type": "string",
+                            "example": "Très bon plat !"
+                          },
+                          "rating": { "type": "integer", "example": 5 },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "example": "2023-01-01T00:00:00Z"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "example": "2023-01-01T00:00:00Z"
+                          },
+                          "user": { "type": "object" },
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "example": "clv1k2z8d0000u3l5g7x9h2wq"
+                            },
+                            "email": {
+                              "type": "string",
+                              "example": "user1@google.com"
+                            },
+                            "name": {
+                              "type": "string",
+                              "example": "Donald Trump"
+                            },
+                            "createdAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "example": "2023-01-01T00:00:00Z"
+                            },
+                            "updatedAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "example": "2023-01-01T00:00:00Z"
+                            }
+                          },
+                          "menuItem": {
+                            "type": "object",
+                            "properties": {
+                              "id": { "type": "integer", "example": 1 },
+                              "name": { "type": "string", "example": "Pizza" },
+                              "description": {
+                                "type": "string",
+                                "example": "Delicious cheese pizza"
+                              },
+                              "imageUrl": {
+                                "type": "string",
+                                "example": "https://example.com/pizza.jpg"
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "format": "date-time",
+                                "example": "2023-01-01T00:00:00Z"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "message": { "type": "string", "example": "1 avis trouvé" }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": [
+                    {
+                      "id": 1,
+                      "comment": "Très bon plat !",
+                      "rating": 5,
+                      "createdAt": "2023-01-01T00:00:00Z",
+                      "updatedAt": "2023-01-01T00:00:00Z",
+                      "user": {
+                        "id": "clv1k2z8d0000u3l5g7x9h2wq",
+                        "email": "user1@google.com",
+                        "name": "Donald Trump",
+                        "createdAt": "2023-01-01T00:00:00Z",
+                        "updatedAt": "2023-01-01T00:00:00Z"
+                      },
+                      "menuItem": {
+                        "id": 1,
+                        "name": "Pizza",
+                        "description": "Delicious cheese pizza",
+                        "imageUrl": "https://example.com/pizza.jpg",
+                        "createdAt": "2023-01-01T00:00:00Z"
+                      }
+                    },
+                    {
+                      "id": 2,
+                      "comment": "Bon mais un peu salé",
+                      "rating": 4,
+                      "createdAt": "2023-01-02T00:00:00Z",
+                      "updatedAt": "2023-01-02T00:00:00Z",
+                      "user": {
+                        "id": "clv1k2z8d0009u3l5g7x9h2wr",
+                        "email": "user2@google.com",
+                        "name": "John Biden",
+                        "createdAt": "2023-01-02T00:00:00Z",
+                        "updatedAt": "2023-01-02T00:00:00Z"
+                      },
+                      "menuItem": {
+                        "id": 2,
+                        "name": "Burger",
+                        "description": "Juicy beef burger",
+                        "imageUrl": "https://example.com/burger.jpg",
+                        "createdAt": "2023-01-02T00:00:00Z"
+                      }
+                    }
+                  ],
+                  "message": "2 avis trouvés"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur lors de la récupération des avis",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": {
+                      "type": "string",
+                      "example": "Erreur lors de la récupération des avis"
+                    }
+                  }
+                },
+                "example": {
+                  "success": false,
+                  "error": "Erreur lors de la récupération des avis"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Créer un nouvel avis",
+        "description": "Ajouter un nouvel avis pour un menu item",
+        "tags": ["Reviews"],
+        "security": [{ "clerkAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["menuItemId", "rating", "comment"],
+                "properties": {
+                  "menuItemId": {
+                    "type": "integer",
+                    "description": "ID du menu item",
+                    "example": 1
+                  },
+                  "rating": {
+                    "type": "integer",
+                    "description": "Note de l'avis (entre 1 et 5)",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "example": 5
+                  },
+                  "comment": {
+                    "type": "string",
+                    "description": "Commentaire de l'avis",
+                    "minLength": 1,
+                    "maxLength": 500,
+                    "example": "Excellent plat !"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Avis créé avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "integer", "example": 4 },
+                        "comment": {
+                          "type": "string",
+                          "example": "Excellent plat !"
+                        },
+                        "rating": { "type": "integer", "example": 5 },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2023-01-03T00:00:00Z"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2023-01-03T00:00:00Z"
+                        },
+                        "user": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "example": "clv1k2z8d0000u3l5g7x9h2wq"
+                            },
+                            "name": {
+                              "type": "string",
+                              "example": "Jean Dupont"
+                            }
+                          }
+                        },
+                        "menuItem": {
+                          "type": "object",
+                          "properties": {
+                            "id": { "type": "integer", "example": 1 },
+                            "name": { "type": "string", "example": "Pizza" }
+                          }
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Avis créé avec succès"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "id": 4,
+                    "comment": "Excellent plat !",
+                    "rating": 5,
+                    "createdAt": "2023-01-03T00:00:00Z",
+                    "updatedAt": "2023-01-03T00:00:00Z",
+                    "user": {
+                      "id": "clv1k2z8d0000u3l5g7x9h2wq",
+                      "name": "Donald Trump"
+                    },
+                    "menuItem": { "id": 1, "name": "Pizza" }
+                  },
+                  "message": "Avis créé avec succès"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Données invalides ou manquantes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": {
+                      "type": "string",
+                      "example": "Données invalides - Rating doit être entre 1 et 5"
+                    },
+                    "details": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": { "type": "string", "example": "rating" },
+                          "message": {
+                            "type": "string",
+                            "example": "Rating doit être entre 1 et 5"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "examples": {
+                  "email_manquant": {
+                    "summary": "Email utilisateur requis",
+                    "value": {
+                      "success": false,
+                      "error": "Email utilisateur requis"
+                    }
+                  },
+                  "utilisateur_non_trouve": {
+                    "summary": "Utilisateur non trouvé",
+                    "value": {
+                      "success": false,
+                      "error": "Utilisateur non trouvé"
+                    }
+                  },
+                  "donnees_manquantes": {
+                    "summary": "Données manquantes",
+                    "value": { "success": false, "error": "Données manquantes" }
+                  },
+                  "deja_review": {
+                    "summary": "Déjà commenté ce plat",
+                    "value": {
+                      "success": false,
+                      "error": "Vous avez déjà laissé un avis pour ce plat. Veuillez modifier votre avis existant."
+                    }
+                  },
+                  "rating_invalide": {
+                    "summary": "Rating invalide",
+                    "value": {
+                      "success": false,
+                      "error": "Données invalides - Rating doit être entre 1 et 5",
+                      "details": [
+                        {
+                          "path": "rating",
+                          "message": "Rating doit être entre 1 et 5"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Utilisateur non authentifié",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": {
+                      "type": "string",
+                      "example": "Utilisateur non authentifié"
+                    }
+                  }
+                },
+                "example": {
+                  "success": false,
+                  "error": "Utilisateur non authentifié"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur lors de la création de l'avis",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": {
+                      "type": "string",
+                      "example": "Erreur lors de la création de l'avis"
+                    }
+                  }
+                },
+                "example": {
+                  "success": false,
+                  "error": "Erreur lors de la création de l'avis"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/profile": {
+      "get": {
+        "summary": "Obtenir le profil d'un utilisateur",
+        "description": "Récupérer le profil de l'utilisateur actuellement authentifié via Clerk session.",
+        "tags": ["Utilisateurs"],
+        "security": [{ "clerkAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Profil utilisateur récupéré avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "example": "clv1k2z8d0000u3l5g7x9h2wq"
+                        },
+                        "email": {
+                          "type": "string",
+                          "example": "user1@example.com"
+                        },
+                        "name": { "type": "string", "example": "Donald Trump" },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2023-01-01T00:00:00Z"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2023-01-01T00:00:00Z"
+                        },
+                        "reviewsCount": { "type": "integer", "example": 5 }
+                      }
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Profil utilisateur récupéré avec succès"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "id": "clv1k2z8d0000u3l5g7x9h2wq",
+                    "email": "user1@example.com",
+                    "name": "Donald Trump",
+                    "createdAt": "2023-01-01T00:00:00Z",
+                    "updatedAt": "2023-01-01T00:00:00Z",
+                    "reviewsCount": 5
+                  },
+                  "message": "Profil utilisateur récupéré avec succès"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié (Clerk session requise)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": { "type": "string", "example": "Non autorisé" }
+                  }
+                },
+                "example": { "success": false, "error": "Non autorisé" }
+              }
+            }
+          },
+          "404": {
+            "description": "Utilisateur non trouvé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": {
+                      "type": "string",
+                      "example": "Utilisateur non trouvé"
+                    }
+                  }
+                },
+                "example": {
+                  "success": false,
+                  "error": "Utilisateur non trouvé"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur lors de la récupération du profil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": {
+                      "type": "string",
+                      "example": "Erreur lors de la récupération du profil"
+                    }
+                  }
+                },
+                "example": {
+                  "success": false,
+                  "error": "Erreur lors de la récupération du profil"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Mettre à jour le profil d'un utilisateur",
+        "description": "Mettre à jour le profil de l'utilisateur actuellement authentifié via Clerk session.",
+        "tags": ["Utilisateurs"],
+        "security": [{ "clerkAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Nouveau nom de l'utilisateur",
+                    "example": "Jean Dupont"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profil mis à jour avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "example": "clv1k2z8d0000u3l5g7x9h2wq"
+                        },
+                        "email": {
+                          "type": "string",
+                          "example": "user@example.com"
+                        },
+                        "name": { "type": "string", "example": "Nom Nouveau" },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2023-03-15T12:00:00Z"
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Profil mis à jour avec succès"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "id": "clv1k2z8d0000u3l5g7x9h2wq",
+                    "email": "user@example.com",
+                    "name": "Nom Nouveau",
+                    "updatedAt": "2023-03-15T12:00:00Z"
+                  },
+                  "message": "Profil mis à jour avec succès"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erreur de validation ou données manquantes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": {
+                      "type": "string",
+                      "example": "Le nom doit être une chaîne de caractères"
+                    }
+                  }
+                },
+                "examples": {
+                  "nom_pas_chaine": {
+                    "summary": "Nom pas une chaîne de caractères",
+                    "value": {
+                      "success": false,
+                      "error": "Le nom doit être une chaîne de caractères"
+                    }
+                  },
+                  "nom_trop_long": {
+                    "summary": "Nom trop long",
+                    "value": {
+                      "success": false,
+                      "error": "Le nom ne peut pas dépasser 50 caractères"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié (Clerk session requise)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": { "type": "string", "example": "Non autorisé" }
+                  }
+                },
+                "example": { "success": false, "error": "Non autorisé" }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur lors de la mise à jour du profil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": {
+                      "type": "string",
+                      "example": "Erreur lors de la mise à jour du profil"
+                    }
+                  }
+                },
+                "example": {
+                  "success": false,
+                  "error": "Erreur lors de la mise à jour du profil"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users": {
+      "get": {
+        "summary": "Obtenir tous les utilisateurs",
+        "description": "Récupérer la liste de tous les utilisateurs",
+        "tags": ["Utilisateurs"],
+        "security": [{ "clerkAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Liste des utilisateurs récupérée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "example": "clv1k2z8d0000u3l5g7x9h2wq"
+                          },
+                          "email": {
+                            "type": "string",
+                            "example": "user1@google.com"
+                          },
+                          "name": {
+                            "type": "string",
+                            "example": "Donald Trump"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "example": "2023-01-01T00:00:00Z"
+                          },
+                          "reviewsCount": { "type": "integer", "example": 5 }
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "2 utilisateur(s) trouvé(s)"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": [
+                    {
+                      "id": "clv1k2z8d0000u3l5g7x9h2wq",
+                      "email": "user1@google.com",
+                      "name": "Donald Trump",
+                      "createdAt": "2023-01-01T00:00:00Z",
+                      "reviewsCount": 5
+                    },
+                    {
+                      "id": "clv1k2z8d0009u3l5g7x9h2wr",
+                      "email": "user2@google.ca",
+                      "name": "Joe Biden",
+                      "createdAt": "2023-01-02T00:00:00Z",
+                      "reviewsCount": 3
+                    }
+                  ],
+                  "message": "2 utilisateur(s) trouvé(s)"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié (Clerk session requise)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": { "type": "string", "example": "Non autorisé" }
+                  }
+                },
+                "example": { "success": false, "error": "Non autorisé" }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur lors de la récupération des utilisateurs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": {
+                      "type": "string",
+                      "example": "Erreur lors de la récupération des utilisateurs"
+                    }
+                  }
+                },
+                "example": {
+                  "success": false,
+                  "error": "Erreur lors de la récupération des utilisateurs"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Créer un nouvel utilisateur",
+        "description": "Créer un nouvel utilisateur s'il n'existe pas déjà (authentification via Clerk)",
+        "tags": ["Utilisateurs"],
+        "security": [{ "clerkAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Utilisateur trouvé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "example": "clv1k2z8d0000u3l5g7x9h2wq"
+                        },
+                        "email": {
+                          "type": "string",
+                          "example": "user1@google.com"
+                        },
+                        "name": { "type": "string", "example": "Donald Trump" },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2023-01-01T00:00:00Z"
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Utilisateur trouvé ou créé avec succès"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "id": "clv1k2z8d0000u3l5g7x9h2wq",
+                    "email": "user1@google.com",
+                    "name": "Donald Trump",
+                    "createdAt": "2023-01-01T00:00:00Z"
+                  },
+                  "message": "Utilisateur trouvé ou créé avec succès"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Nouvel utilisateur créé avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "example": "clv1k2z8d0000u3l5g7x9h2wq"
+                        },
+                        "email": {
+                          "type": "string",
+                          "example": "user1@google.com"
+                        },
+                        "name": { "type": "string", "example": "Donald Trump" },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2023-01-01T00:00:00Z"
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Nouvel utilisateur créé et connecté avec succès"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "id": "clv1k2z8d0000u3l5g7x9h2wq",
+                    "email": "user1@google.com",
+                    "name": "Donald Trump",
+                    "createdAt": "2023-01-01T00:00:00Z"
+                  },
+                  "message": "Nouvel utilisateur créé et connecté avec succès"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "L'adresse email de l'utilisateur est manquante",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": {
+                      "type": "string",
+                      "example": "L'adresse email de l'utilisateur est manquante"
+                    }
+                  }
+                },
+                "example": {
+                  "success": false,
+                  "error": "L'adresse email de l'utilisateur est manquante"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Utilisateur non authentifié",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": {
+                      "type": "string",
+                      "example": "Utilisateur non authentifié"
+                    }
+                  }
+                },
+                "example": {
+                  "success": false,
+                  "error": "Utilisateur non authentifié"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur lors de la création de l'utilisateur",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": {
+                      "type": "string",
+                      "example": "Erreur lors de la création de l'utilisateur"
+                    }
+                  }
+                },
+                "example": {
+                  "success": false,
+                  "error": "Erreur lors de la création de l'utilisateur"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "tags": []
+}

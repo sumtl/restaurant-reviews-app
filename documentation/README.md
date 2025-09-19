@@ -30,6 +30,7 @@ npm run dev
 
 > ⚠️ **Configurer la base de données** : renseigner la connexion PostgreSQL dans le fichier `.env` à la racine du projet.
 
+---
 ## 🏗️ Architecture technique et choix de conception
 
 ### Stack technique
@@ -40,7 +41,54 @@ npm run dev
 - **Tailwind CSS** : Design responsive et composants UI modernes.
 - **Swagger** : Documentation interactive et testable de l’API.
 - **Zod** : Validation stricte des données côté API.
----
+- **Vercel** : Hébergement et déploiement continu.
+- **Shadcn/ui** : Composants UI accessibles et stylés.
+- **Clerk.dev** : Gestion complète de l’authentification et des utilisateurs.
+
+
+### Schéma d'Architecture
+
+- **Architecture (Mermaid)**
+
+```mermaid
+flowchart TD
+    Client["Client (Browser)"]
+    ClerkProvider["ClerkProvider (Layout)"]
+    Clerk["Clerk (Auth Service)"]
+    Middleware["Next.js Middleware"]
+    API["API Route Handler"]
+    DB["Database (Prisma)"]
+
+    Client -- "Sign in / Sign up" --> Clerk
+    Client -- "Wrapped in" --> ClerkProvider
+    Client -- "Request (with session cookie)" --> Middleware
+    Middleware -- "Validate session" --> Clerk
+    Middleware -- "Allow or block" --> API
+    API -- "Get user info (currentUser)" --> Clerk
+    API -- "CRUD operations" --> DB
+    API -- "Response" --> Client
+```
+
+- **Séquence: Authentification et accès protégé**
+
+```mermaid
+sequenceDiagram
+    participant U as Utilisateur
+    participant C as Clerk
+    participant MW as Middleware
+    participant API as API Route
+    participant DB as Database
+
+    U->>C: Sign in / Sign up
+    C-->>U: Session cookie
+    U->>MW: Accès à /api/reviews
+    MW->>C: Vérification session
+    MW-->>API: Si session valide
+    API->>DB: Lecture/écriture
+    API-->>U: Réponse
+    MW-->>U: Si session invalide, redirection /sign-in
+```
+
 ### Structure fonctionnelle et parcours utilisateur
 
 - **Authentification** :
@@ -60,9 +108,13 @@ npm run dev
 	- Chaque utilisateur peut consulter et modifier son profil (nom).
 
 - **Sécurité et validation** :
-	- Toutes les routes sensibles vérifient l’authentification via le header `X-User-Email`.
+	- Toutes les routes sensibles vérifient l’authentification via Clerk.(v2)
 	- Les entrées utilisateur sont validées côté API (Zod) et les erreurs sont explicites.
----
+	- Inscription et connexion via Clerk (email, Google, autres providers).
+	- Synchronisation automatique des utilisateurs Clerk avec la base de données locale.
+	- Modification du nom d'utilisateur possible depuis le profil.
+	- Authentification requise pour toute action d'ajout, modification ou suppression d'avis.
+
 ### Structure principale du projet (arborescence code)
 
 - `/app` : Contient toutes les pages principales de l’application (UI) et les routes API (Next.js App Router).	
@@ -73,8 +125,12 @@ npm run dev
 	- `menu-items/` : Pages de liste et détail des plats.
 	- `profile/` : Pages de profil utilisateur (voir, éditer).
 	- `reviews/` : Pages de gestion des avis (tous les avis, mes avis, édition).
+	- `sign-in/` : Pages de connexion (login) et authentification Clerk.(v2)
+	- `/sign-up/` : Pages d’inscription (signup) et création de compte Clerk..(v2)
+	- `/user-profile/` : Pages de profil utilisateur Clerk (gestion complète du compte).(v2)
 - `/components` : Composants React réutilisables facilitant la construction de l’interface utilisateur.
-	- `ReviewForm` : Formulaire pour créer ou modifier un avis (note + commentaire).
+    - `/ui` : Composants UI génériques (button,card,label).
+    - `ReviewForm` : Formulaire pour créer ou modifier un avis (note + commentaire).
 	- `ReviewList` : Affichage de la liste des avis pour un plat ou un utilisateur.
 	- `ReviewCard` : Carte individuelle affichant le détail d’un avis (auteur, note, commentaire, actions).
 	- `StarRating` : Composant interactif d’affichage et de saisie de la note sous forme d’étoiles.
@@ -82,15 +138,9 @@ npm run dev
 - `/prisma` : Fichiers liés à la base de données Prisma :
 	- `schema.prisma` : Modèle de données principal (tables, relations, contraintes).
 	- `seed.ts` : Script de peuplement de la base de données avec des données d’exemple.
-- `/lib` : Fonctions utilitaires et helpers partagés (ex : configuration Prisma, middlewares, outils d’authentification).
-	- `prisma.ts` : Singleton de connexion à la base de données Prisma pour éviter la recréation du client à chaque appel (optimisation Next.js).
-	- `rating.ts` : Schéma de validation Zod pour les avis (note, commentaire, contraintes de validation pour la création/modification d’un avis).
-	- `swagger.ts` : Configuration et génération de la documentation Swagger/OpenAPI pour l’API REST (définitions, schémas, endpoints, etc.).
+- `/lib` : Fonctions utilitaires et helpers partagés (ex : configuration Prisma, rating , swagger).
 - `/types` : Définitions TypeScript personnalisées 
-	- `index.ts` : Définit les interfaces principales utilisées dans l’application :
-	    - `Review` : Structure d’un avis (note, commentaire, auteur, plat concerné, dates).
-		- `MenuItem` : Structure d’un plat (nom, description, image, date de création).
-		- `User` : Structure d’un utilisateur (id, email, nom, dates).
+	- `index.ts` : Définit les interfaces principales utilisées dans l’application (Review, MenuItem, User) :
 - `/documentation` : Documentation du projet :
 	- `README.md` : Présentation générale, instructions, architecture, captures d’écran, etc.
 	- `CODE_ANALYSIS.md` : Analyse détaillée du code, choix techniques, patterns utilisés.
@@ -99,32 +149,43 @@ npm run dev
 	- `screenshots/` : Captures d’écran de l’application pour la documentation.
 
 - `/public` : Fichiers statiques accessibles publiquement. Ce projet contient uniquement les images des plats du menu utilisées pour illustrer chaque plat dans l’interface.
-	- `images/costco-food/` : Dossier contenant toutes les images des plats 
 - `/test` : Fichiers de test et utilitaires de test :
-	- `api.http` : Fichier de requêtes HTTP pour tester les endpoints de l’API (utilisé avec VS Code REST Client).
-  
+	- `api.http` : Fichier de requêtes HTTP pour tester les endpoints de l’API (utilisé avec VS Code REST Client).(Version 1.0 seulement)
+ 
 ---
-## 📸 Captures d’écran
+## 📸 Captures d’écran(Version 1 VS Version 2)
 
 ### Pages générales
-- **Page d’accueil** (landing page, non connecté)  
-	![](./screenshots/home.png)
+- **Page d’accueil** (landing page, non connecté) 
+  - **Version 1 (Avant)** 
+ ![](./screenshots/home.png) 
+  - **Version 2 (Après)**
+	![](./screenshots/home-v2.png) 
 
-- **Page de connexion** (login)  
+
+- **Page de connexion** (login) 
+  - Version 1 (Avant) 
 	![](./screenshots/login.png)
+  - **Version 2 (Après)**
 
-- **Page d’accueil après connexion** (vue personnalisée)  
+- **Page d’accueil après connexion** (vue personnalisée)
+  - **Version 1 (Avant)**
 	![](./screenshots/home-connected.png)
-
-
+  - **Version 2 (Après)**
+    ![](./screenshots/home-connected-v2.png)
 
 ### Parcours plats & avis
 - **Liste des plats** (menu)  
+	- **Version 1 (Avant)**		
 	![](./screenshots/menu-list.png)
+	- **Version 2 (Après)**
+	![](./screenshots/menu-list-v2.png)
 
-- **Détail d’un plat** (avec liste d’avis)  
+- **Détail d’un plat** (avec liste d’avis)
+    - **Version 1 (Avant)**
 	![](./screenshots/menu-detail.png)
-
+    - **Version 2 (Après)**
+	![](./screenshots/menu-detail-v2.png)
 - **Tous les avis**  
 	![](./screenshots/reviews-all.png)
 
@@ -159,19 +220,36 @@ npm run dev
 	![](./screenshots/review-delete.png)
 
 ### Utilisateur
+- **Inscription** (signup) 
+	- **Version 2 (Après)**
+	![](./screenshots/sign-up-v2.png) 
+- **Login**(signin)
+	- **Version 2 (Après)**
+	![](./screenshots/login-v2.png)
+- **Logout** 
+	![](./screenshots/sign-out-v2.png)    
 - **Profil utilisateur** (vue) 
+    - **Version 1 (Avant)**
 	![](./screenshots/profile-view.png)
+    - **Version 2 (Après)**
+	![](./screenshots/profile-view-v2.png)
 
-- **Profil utilisateur** (édition)  
+- **Profil utilisateur** (édition) 
+    - **Version 1 (Avant)**
 	![](./screenshots/profile-edit.png)
+    - **Version 2 (Après)**
+	![](./screenshots/profile-edit-v2.png)
+	![](./screenshots/profile-edit2-v2.png)
 
 
 ### Documentation API intégrée (Swagger UI)
-- **Partie 1 :**
+- **Version 1 (Avant)**
+  - Partie 1 
     ![](./screenshots/swagger-ui-part1.png)
-
-- **Partie 2 :**
+  - Partie 2 :
     ![](./screenshots/swagger-ui-part2.png)
+- **Version 2 (Après)**
+	![](./screenshots/swagger-ui-v2.png)
 
 ---
 ## 🚀 Instructions de déploiement (Vercel)
