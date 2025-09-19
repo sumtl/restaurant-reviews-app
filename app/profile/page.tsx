@@ -4,245 +4,177 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Review, User } from "@/types";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { UserButton, useUser } from "@clerk/nextjs";
+import { Label } from "@/components/ui/label";
 
 // Page de profil utilisateur
 export default function ProfilePage() {
-  const [user, setUser] = useState<User | null>(null);
+  const [userData, setUserData] = useState<User | null>(null);
   const [userReviews, setUserReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-
-  // Fonction asynchrone pour charger les infos du profil et les avis
-  async function load() {
-    // Vérifier l'email utilisateur
-    const email = localStorage.getItem("userEmail");
-    if (!email) {
-      router.push("/login");
-      return;
-    }
-    try {
-      // Charger les infos utilisateur
-      const userResponse = await fetch("/api/users/profile", {
-        headers: {
-          "X-User-Email": email,
-        },
-      });
-      const userData = await userResponse.json();
-      if (userData.success) {
-        setUser(userData.data);
-      }
-      // Charger tous les avis et filtrer ceux de l'utilisateur
-      const reviewsResponse = await fetch("/api/reviews");
-      const reviewsData = await reviewsResponse.json();
-      if (reviewsData.success) {
-        const myReviews = reviewsData.data.filter(
-          (review: Review) => review.user.email === email
-        );
-        setUserReviews(myReviews);
-      }
-    } catch (error) {
-      console.error("Erreur lors du chargement du profil:", error);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const { user, isLoaded } = useUser();
 
   useEffect(() => {
+    if (!isLoaded) return;
+    if (!user) {
+      router.push("/sign-in");
+      return;
+    }
+    async function load() {
+      try {
+        // Charger les infos utilisateur (backend détecte l'utilisateur via Clerk)
+        const userResponse = await fetch("/api/users/profile");
+        const userData = await userResponse.json();
+        if (userData.success) {
+          setUserData(userData.data);
+        }
+        // Charger les avis de l'utilisateur
+        const reviewsResponse = await fetch("/api/reviews/by-user");
+        const reviewsData = await reviewsResponse.json();
+        if (reviewsData.success) {
+          setUserReviews(reviewsData.data);
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement du profil:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
     load();
-  }, []);
+  }, [user, isLoaded, router]);
 
-  // Déconnexion utilisateur
-  const handleLogout = () => {
-    localStorage.removeItem("userEmail");
-    router.push("/");
-  };
-
-  // Affichage pendant le chargement
   if (loading) {
     return (
-      <div style={{ padding: "20px", textAlign: "center" }}>
-        <p>Chargement du profil...</p>
+      <div className="flex justify-center items-center min-h-[300px]">
+        <span className="text-gray-500">Chargement du profil...</span>
       </div>
     );
   }
 
-  // Affichage si l'utilisateur n'est pas trouvé
-  if (!user) {
+  if (!userData) {
     return (
-      <div style={{ padding: "20px", textAlign: "center" }}>
-        <h1>Erreur</h1>
-        <p>Impossible de charger le profil utilisateur.</p>
-      </div>
+      <Card className="max-w-xl mx-auto mt-10">
+        <CardHeader>
+          <CardTitle>Erreur</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>Impossible de charger le profil utilisateur.</p>
+        </CardContent>
+      </Card>
     );
   }
 
-  // Rendu principal du profil utilisateur
   return (
-    <div style={{ padding: "20px", maxWidth: "800px", margin: "0 auto" }}>
-      {/* Lien retour (optionnel) */}
-      <div style={{ marginBottom: "20px" }}>
-        <Link href="/" style={{ color: "#666", textDecoration: "none" }}></Link>
-      </div>
-
-      {/* Bloc infos utilisateur */}
-      <div
-        style={{
-          backgroundColor: "#fff",
-          padding: "20px",
-          borderRadius: "8px",
-          border: "1px solid #ddd",
-          marginBottom: "30px",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-          }}
-        >
-          <div>
-            <h1 style={{ color: "#e31837", marginBottom: "10px" }}>
-              Mon Profil
-            </h1>
-            <p style={{ margin: "5px 0" }}>
-              <strong>Email:</strong> {user.email}
-            </p>
-            <p style={{ margin: "5px 0" }}>
-              <strong>Nom:</strong> {user.name || "Non défini"}
-            </p>
-            <p style={{ margin: "5px 0", fontSize: "14px", color: "#666" }}>
-              Membre depuis:{" "}
-              {new Date(user.createdAt).toLocaleDateString("fr-FR")}
-            </p>
+    <div className="max-w-3xl mx-auto p-4 space-y-8">
+      {/* Infos utilisateur */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Mon Profil</CardTitle>
+          <CardDescription>
+            Gérer vos informations personnelles et vos avis
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2 mb-4">
+            <Label>Email :</Label>
+            <span className="block text-gray-700">{userData.email}</span>
+            <Label>Nom :</Label>
+            <span className="block text-gray-700">
+              {userData.name || "Non défini"}
+            </span>
+            <Label>Membre depuis :</Label>
+            <span className="block text-gray-700">
+              {new Date(userData.createdAt).toLocaleDateString("fr-FR")}
+            </span>
           </div>
-
-          {/* Actions utilisateur : modifier et déconnexion */}
-          <div style={{ display: "flex", gap: "10px" }}>
-            <Link
-              href="/profile/edit"
-              style={{
-                backgroundColor: "#e31837",
-                color: "white",
-                padding: "8px 16px",
-                textDecoration: "none",
-                borderRadius: "5px",
-                fontSize: "14px",
-              }}
-            >
-              Modifier
-            </Link>
-            <button
-              onClick={handleLogout}
-              style={{
-                backgroundColor: "#fff",
-                color: "#666",
-                padding: "8px 16px",
-                border: "1px solid #ddd",
-                borderRadius: "5px",
-                fontSize: "14px",
-                cursor: "pointer",
-              }}
-            >
-              Déconnexion
-            </button>
+          <div className="flex gap-3 items-center">
+            <Button asChild variant="default">
+              <Link href="/user-profile">Modifier</Link>
+            </Button>
+            <UserButton />
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* Bloc statistiques utilisateur */}
-      <div
-        style={{
-          backgroundColor: "#f9f9f9",
-          padding: "15px",
-          borderRadius: "8px",
-          marginBottom: "30px",
-        }}
-      >
-        <h3 style={{ margin: "0 0 10px 0" }}>Mes statistiques</h3>
-        <p style={{ margin: "5px 0" }}>
-          <strong>{userReviews.length}</strong> avis publiés
-        </p>
-        {userReviews.length > 0 && (
-          <p style={{ margin: "5px 0" }}>
-            Note moyenne donnée:{" "}
-            <strong>
-              {(
-                userReviews.reduce((sum, review) => sum + review.rating, 0) /
-                userReviews.length
-              ).toFixed(1)}
-              /5
-            </strong>
+      {/* Statistiques utilisateur */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Mes statistiques</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>
+            <strong>{userReviews.length}</strong> avis publiés
           </p>
-        )}
-      </div>
+          {userReviews.length > 0 && (
+            <p>
+              Note moyenne donnée :{" "}
+              <strong>
+                {(
+                  userReviews.reduce((sum, review) => sum + review.rating, 0) /
+                  userReviews.length
+                ).toFixed(1)}
+                /5
+              </strong>
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Liste des avis de l'utilisateur */}
-      <h2>Mes avis</h2>
-
-      {userReviews.length === 0 ? (
-        <div
-          style={{
-            textAlign: "center",
-            padding: "40px",
-            backgroundColor: "#f9f9f9",
-            borderRadius: "5px",
-          }}
-        >
-          <p>Vous n'avez pas encore publié d'avis.</p>
-          <p>
-            <Link href="/" style={{ color: "#e31837" }}>
-              Parcourez le menu pour laisser votre premier avis !
-            </Link>
-          </p>
-        </div>
-      ) : (
-        userReviews.map((review) => (
-          <div
-            key={review.id}
-            style={{
-              border: "1px solid #ddd",
-              padding: "15px",
-              marginBottom: "15px",
-              borderRadius: "5px",
-              backgroundColor: "#fff",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-                marginBottom: "10px",
-              }}
-            >
-              <div>
-                <h4 style={{ margin: "0 0 5px 0", color: "#e31837" }}>
-                  <Link
-                    href={`/menu-items/${review.menuItem.id}`}
-                    style={{ color: "#e31837", textDecoration: "none" }}
-                  >
-                    {review.menuItem.name}
-                  </Link>
-                </h4>
-                {/* Affichage de la note en étoiles */}
-                <div>{"⭐".repeat(review.rating)}</div>
-              </div>
-              <div style={{ textAlign: "right" }}>
-                <small style={{ color: "#666" }}>
-                  {new Date(review.createdAt).toLocaleDateString("fr-FR")}
-                </small>
-                <br />
-              </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Mes avis</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {userReviews.length === 0 ? (
+            <div className="text-center py-8">
+              <p>Vous n'avez pas encore publié d'avis.</p>
+              <Button asChild variant="link">
+                <Link href="/">
+                  Parcourez le menu pour laisser votre premier avis !
+                </Link>
+              </Button>
             </div>
-
-            {/* Commentaire de l'utilisateur */}
-            <p style={{ margin: "10px 0", lineHeight: "1.5" }}>
-              {review.comment}
-            </p>
-          </div>
-        ))
-      )}
+          ) : (
+            <div className="space-y-4">
+              {userReviews.map((review) => (
+                <Card key={review.id} className="bg-gray-50">
+                  <CardHeader>
+                    <CardTitle>
+                      <Link
+                        href={`/menu-items/${review.menuItem.id}`}
+                        className="text-orange-600 hover:underline"
+                      >
+                        {review.menuItem.name}
+                      </Link>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="text-lg">
+                        {"⭐".repeat(review.rating)}
+                      </div>
+                      <small className="text-gray-500">
+                        {new Date(review.createdAt).toLocaleDateString("fr-FR")}
+                      </small>
+                    </div>
+                    <p className="text-gray-700">{review.comment}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

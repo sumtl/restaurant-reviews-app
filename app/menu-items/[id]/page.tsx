@@ -5,6 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { MenuItem, Review } from "@/types";
 import { useUser } from "@clerk/nextjs";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 // Page de détails du plat par ID
 export default function MenuItemPage({ params }: { params: { id: string } }) {
@@ -24,7 +26,9 @@ export default function MenuItemPage({ params }: { params: { id: string } }) {
         if (menuData.success) {
           setMenuItem(menuData.data);
         }
-        const reviewsResponse = await fetch(`/api/reviews/by-menu/${params.id}`);
+        const reviewsResponse = await fetch(
+          `/api/reviews/by-menu/${params.id}`
+        );
         const reviewsData = await reviewsResponse.json();
         if (reviewsData.success) {
           setReviews(reviewsData.data);
@@ -82,24 +86,9 @@ export default function MenuItemPage({ params }: { params: { id: string } }) {
           marginBottom: "20px",
         }}
       >
-        <Link
-          href="/menu-items"
-          style={{
-            display: "inline-block",
-            border: "1px solid #d1d5db",
-            background: "#fff",
-            color: "#2563eb",
-            padding: "7px 18px",
-            borderRadius: "5px",
-            fontWeight: 500,
-            fontSize: "15px",
-            textDecoration: "none",
-            transition: "border-color 0.2s, color 0.2s",
-            cursor: "pointer",
-          }}
-        >
-          Choisir un autre plat
-        </Link>
+        <Button variant="outline" asChild>
+          <Link href="/menu-items">Choisir un autre plat</Link>
+        </Button>
       </div>
 
       {/* Info du menu item */}
@@ -176,114 +165,61 @@ export default function MenuItemPage({ params }: { params: { id: string } }) {
           </div>
           {isSignedIn && user && (
             <div style={{ marginTop: "10px" }}>
-              <button
-                style={{
-                  backgroundColor: "#2563eb",
-                  color: "white",
-                  padding: "10px 20px",
-                  border: "none",
-                  borderRadius: "5px",
-                  cursor: "pointer",
-                  fontWeight: 500,
-                  fontSize: "16px",
-                  boxShadow: "0 2px 8px rgba(37,99,235,0.08)",
-                  transition: "background 0.2s",
-                }}
+              <Button
+                className="bg-blue-500 text-white hover:bg-blue-600"
+                size="lg"
                 onClick={() => {
                   window.location.href = `/reviews?menuItemId=${params.id}`;
                 }}
               >
                 Ajouter un avis
-              </button>
+              </Button>
             </div>
           )}
         </div>
       </div>
 
       {/* Liste des avis */}
-      <h2>
+      <h2 className="text-lg font-semibold">
         Avis des clients
-        <span
-          style={{
-            color: "#2563eb",
-            fontWeight: 500,
-            marginLeft: 8,
-            fontSize: "1rem",
-          }}
-        >
+        <span className="text-blue-600 font-medium ml-2">
           ({reviews.length})
         </span>
       </h2>
 
       {reviews.length === 0 ? (
-        <div
-          style={{
-            textAlign: "center",
-            padding: "40px",
-            backgroundColor: "#f9f9f9",
-            borderRadius: "5px",
-          }}
-        >
+        <div className="text-center p-10 bg-gray-100 rounded">
           <p>Aucun avis pour ce plat.</p>
           {user && isSignedIn && <p>Soyez le premier à laisser un avis !</p>}
         </div>
       ) : (
         reviews.map((review) => (
-          <div
+          <Card
             key={review.id}
-            style={{
-              border: "1px solid #ddd",
-              padding: "15px",
-              marginBottom: "15px",
-              borderRadius: "5px",
-              backgroundColor: "#fff",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-                marginBottom: "10px",
-              }}
-            >
-              <div>
-                <StarRating rating={review.rating} />
-              </div>
-              <small style={{ color: "#666" }}>
+            className="mb-4 p-4 border border-gray-300 rounded-lg shadow-md">
+            <div className="flex justify-between items-center">
+              <StarRating rating={review.rating} />
+              <small className="text-gray-600">
                 {new Date(review.createdAt).toLocaleDateString("fr-FR")}
               </small>
             </div>
-
-            <p style={{ margin: "10px 0", lineHeight: "1.5" }}>
-              {review.comment}
-            </p>
-
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <small style={{ color: "#888" }}>
+            <p className="my-2">{review.comment}</p>
+            <div className="flex justify-between items-center">
+              <small className="text-gray-800">
                 Par: {review.user?.name || "Client anonyme"}
               </small>
-
               {user && isSignedIn && user.id === review.user?.id && (
-                <Link
-                  href={`/reviews/${review.id}/edit`}
-                  style={{
-                    color: "#e31837",
-                    fontSize: "14px",
-                    textDecoration: "none",
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    window.location.href = `/reviews/${review.id}/edit`;
                   }}
                 >
                   Modifier
-                </Link>
+                </Button>
               )}
             </div>
-          </div>
+          </Card>
         ))
       )}
     </div>
